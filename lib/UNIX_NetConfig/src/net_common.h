@@ -11,6 +11,9 @@
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
 /* Public typedef ------------------------------------------------------------*/
+typedef void (*config_cb_t)(const char *iface, const char *option,
+                            const char *arg);
+
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
@@ -18,33 +21,19 @@ class net_resolver {
 public:
   net_resolver(char *buff, size_t buf_size);
 
-  void bind_config(const char *iface_name, net_config_t *config);
-  void resolve();
+  void resolve(config_cb_t callback);
 
 protected:
   char *_read_line();
   char *_read_arg(char *str);
-  bool _process_line(char *line);
   char *_strip(char *line);
-  bool _resolve_option(char *raw_opt);
-
-  void _switch_interface(const char *iface);
-  void _process_option(const char *option, const char *arg);
-
-  void _process_opt_static(const char *arg);
+  bool _resolve_option(config_cb_t callback, char *raw_opt);
 
 private:
-#if ESP32 || ESP_PLATFORM || ESP8266 || __APPLE__ || __linux__
-  net_config_t *_wlan0;
-#endif
-#if ARDUINO_WT32_ETH01 || ETH_ENABLE
-  net_config_t *_eth0;
-#endif
-
   char *_buf;
+  const char *_interface;
   size_t _buf_size;
   size_t _offset;
-  net_config_t *_curr_config;
 };
 
 #endif /* _NET_COMMON_H */
