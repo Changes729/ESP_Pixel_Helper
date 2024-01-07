@@ -101,6 +101,8 @@ int net_config_update(const char *f) {
     return 0;
   }
 
+#if __APPLE__ || __linux__
+#else
   File config_file = LittleFS.open(f, "w");
   for (int i = 0; i < _iface_size; ++i) {
     if (_is_default_config(_iface_cfg[i].conf)) {
@@ -133,7 +135,7 @@ int net_config_update(const char *f) {
     config_file.println(_iface_cfg[i].conf.gateway.ipv4[0]);
   }
   config_file.close();
-
+#endif
   return 0;
 }
 
