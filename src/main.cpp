@@ -24,7 +24,11 @@ void setup() {
   if (net_config_init("/etc/dhcpcd.conf") == 0) {
     auto config = net_config_get("wlan0");
     uint32_t subnet = 0xFFFFFFFF >> (32 - config->mask_bit);
-    if (!WiFi.config(config->address.ipv4, config->gateway.ipv4, subnet)) {
+#if DEBUG
+    Serial.println(IPAddress(config->address));
+    Serial.println(IPAddress(subnet));
+#endif
+    if (!WiFi.config(config->address, config->gateway, subnet)) {
       Serial.println("STA Failed to configure");
     }
   }

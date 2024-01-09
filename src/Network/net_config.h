@@ -3,7 +3,7 @@
 #define UNIX_NET_CONFIG_H
 #pragma once
 /* Public include ------------------------------------------------------------*/
-#include "ipv4_utils.h"
+#include <stdint.h>
 
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
@@ -11,8 +11,8 @@
 typedef struct _net_config net_config_t;
 
 struct _net_config {
-  ipv4_t address;
-  ipv4_t gateway;
+  uint32_t address;
+  uint32_t gateway;
   uint8_t mask_bit;
 };
 

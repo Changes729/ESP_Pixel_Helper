@@ -12,7 +12,7 @@
 #define required_argument 1
 #define NET_CONF_MAX_SIZE 1024 /** 1k */
 #define NET_DEFAULT_CFG                                                        \
-  net_config_t { .address = {0, 0, 0, 0}, .gateway{0, 0, 0, 0}, .mask_bit = 32 }
+  net_config_t { .address = 0, .gateway = 0, .mask_bit = 32 }
 
 /* Private typedef -----------------------------------------------------------*/
 typedef struct _net_interface _net_iface_t;
@@ -112,27 +112,29 @@ int net_config_update(const char *f) {
     config_file.print("interface ");
     config_file.println(_iface_cfg[i].iface);
 
+    const uint8_t *ipv4 = (uint8_t *)&_iface_cfg[i].conf.address;
     config_file.print("static ");
     config_file.print("ip_address=");
-    config_file.print(_iface_cfg[i].conf.address.ipv4[0]);
+    config_file.print(ipv4[0]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.address.ipv4[1]);
+    config_file.print(ipv4[1]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.address.ipv4[2]);
+    config_file.print(ipv4[2]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.address.ipv4[3]);
+    config_file.print(ipv4[3]);
     config_file.print('/');
     config_file.println(_iface_cfg[i].conf.mask_bit);
 
+    ipv4 = (uint8_t *)&_iface_cfg[i].conf.gateway;
     config_file.print("static ");
     config_file.print("routers=");
-    config_file.print(_iface_cfg[i].conf.gateway.ipv4[0]);
+    config_file.print(ipv4[0]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.gateway.ipv4[1]);
+    config_file.print(ipv4[1]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.gateway.ipv4[2]);
+    config_file.print(ipv4[2]);
     config_file.print('.');
-    config_file.println(_iface_cfg[i].conf.gateway.ipv4[3]);
+    config_file.println(ipv4[3]);
   }
   config_file.close();
 #endif
@@ -180,8 +182,8 @@ static void _init_iface() {
 
   for (int i = 0; i < _iface_size; ++i) {
     _iface_cfg[i].iface = iface_list[i];
-    _iface_cfg[i].conf.address = {0, 0, 0, 0};
-    _iface_cfg[i].conf.gateway = {0, 0, 0, 0};
+    _iface_cfg[i].conf.address = 0;
+    _iface_cfg[i].conf.gateway = 0;
     _iface_cfg[i].conf.mask_bit = 32;
   }
 }
@@ -226,26 +228,22 @@ void _process_option(const char *iface, const char *option, const char *arg) {
 }
 
 void _process_opt_static(net_config_t &conf, const char *arg) {
+  uint32_t ip;
+  uint8_t *ipv4 = (uint8_t *)&ip;
+
   if (strstr(arg, "ip_address") != nullptr) {
     int mask_bit;
-    int ipv4[4];
     int count = sscanf(arg, "ip_address=%d.%d.%d.%d/%d", &ipv4[0], &ipv4[1],
                        &ipv4[2], &ipv4[3], &mask_bit);
     if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
-      conf.address.ipv4[0] = ipv4[0];
-      conf.address.ipv4[1] = ipv4[1];
-      conf.address.ipv4[2] = ipv4[2];
-      conf.address.ipv4[3] = ipv4[3];
+      conf.address = ip;
       conf.mask_bit = mask_bit;
     }
   } else if (strstr(arg, "routers") != nullptr) {
-    int ipv4[4];
     int count = sscanf(arg, "routers=%d.%d.%d.%d", &ipv4[0], &ipv4[1], &ipv4[2],
                        &ipv4[3]);
-
-    conf.gateway.ipv4[0] = ipv4[0];
-    conf.gateway.ipv4[1] = ipv4[1];
-    conf.gateway.ipv4[2] = ipv4[2];
-    conf.gateway.ipv4[3] = ipv4[3];
+    if (count == 4) {
+      conf.gateway = ip;
+    }
   }
 }
