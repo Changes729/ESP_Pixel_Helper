@@ -55,7 +55,9 @@ void setup() {
         break;
       }
     }
-  } else {
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
     WiFi.softAP("ESP_32", "12345678");
     IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
