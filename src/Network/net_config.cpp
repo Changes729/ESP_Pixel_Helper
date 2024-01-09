@@ -114,25 +114,25 @@ int net_config_update(const char *f) {
 
     config_file.print("static ");
     config_file.print("ip_address=");
-    config_file.print(_iface_cfg[i].conf.address.ipv4[3]);
-    config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.address.ipv4[2]);
+    config_file.print(_iface_cfg[i].conf.address.ipv4[0]);
     config_file.print('.');
     config_file.print(_iface_cfg[i].conf.address.ipv4[1]);
     config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.address.ipv4[0]);
+    config_file.print(_iface_cfg[i].conf.address.ipv4[2]);
+    config_file.print('.');
+    config_file.print(_iface_cfg[i].conf.address.ipv4[3]);
     config_file.print('/');
     config_file.println(_iface_cfg[i].conf.mask_bit);
 
     config_file.print("static ");
     config_file.print("routers=");
-    config_file.print(_iface_cfg[i].conf.gateway.ipv4[3]);
-    config_file.print('.');
-    config_file.print(_iface_cfg[i].conf.gateway.ipv4[2]);
+    config_file.print(_iface_cfg[i].conf.gateway.ipv4[0]);
     config_file.print('.');
     config_file.print(_iface_cfg[i].conf.gateway.ipv4[1]);
     config_file.print('.');
-    config_file.println(_iface_cfg[i].conf.gateway.ipv4[0]);
+    config_file.print(_iface_cfg[i].conf.gateway.ipv4[2]);
+    config_file.print('.');
+    config_file.println(_iface_cfg[i].conf.gateway.ipv4[3]);
   }
   config_file.close();
 #endif
@@ -229,8 +229,8 @@ void _process_opt_static(net_config_t &conf, const char *arg) {
   if (strstr(arg, "ip_address") != nullptr) {
     int mask_bit;
     int ipv4[4];
-    int count = sscanf(arg, "ip_address=%d.%d.%d.%d/%d", &ipv4[3], &ipv4[2],
-                       &ipv4[1], &ipv4[0], &mask_bit);
+    int count = sscanf(arg, "ip_address=%d.%d.%d.%d/%d", &ipv4[0], &ipv4[1],
+                       &ipv4[2], &ipv4[3], &mask_bit);
     if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
       conf.address.ipv4[0] = ipv4[0];
       conf.address.ipv4[1] = ipv4[1];
@@ -240,8 +240,8 @@ void _process_opt_static(net_config_t &conf, const char *arg) {
     }
   } else if (strstr(arg, "routers") != nullptr) {
     int ipv4[4];
-    int count = sscanf(arg, "routers=%d.%d.%d.%d", &ipv4[3], &ipv4[2], &ipv4[1],
-                       &ipv4[0]);
+    int count = sscanf(arg, "routers=%d.%d.%d.%d", &ipv4[0], &ipv4[1], &ipv4[2],
+                       &ipv4[3]);
 
     conf.gateway.ipv4[0] = ipv4[0];
     conf.gateway.ipv4[1] = ipv4[1];
