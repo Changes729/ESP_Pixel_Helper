@@ -91,44 +91,11 @@ const wifi_config *wifi_config_get(size_t index) {
 
 int wifi_config_set(const char *ssid, const char *passwd) {
   int ret = false;
-
-  for (int i = 0; i < _config_size; ++i) {
-    if (_wifi_config[i].is_ssid_equal(ssid)) {
-      _wifi_config[i].set_ssid(ssid);
-      ret = true;
-      break;
-    }
+  if (_config_size != 0) {
+    _wifi_config[0].set_ssid(ssid);
+    _wifi_config[0].set_passwd(passwd);
+    ret = true;
   }
-
-  if (!ret) {
-    for (int i = 0; i < _config_size; ++i) {
-      if (!_wifi_config[i].is_valid()) {
-        _wifi_config[i].set_ssid(ssid);
-        _wifi_config[i].set_passwd(passwd);
-        ret = true;
-        break;
-      }
-    }
-  }
-
-  if (!ret) {
-    wifi_config *configs = new wifi_config[_config_size + 1];
-    if (configs != nullptr) {
-      for (int i = 0; i < _config_size; ++i) {
-        configs[i].set_ssid(_wifi_config[i].get_ssid());
-        configs[i].set_passwd(_wifi_config[i].get_passwd());
-      }
-
-      configs[_config_size].set_ssid(ssid);
-      configs[_config_size].set_passwd(passwd);
-      ret = true;
-
-      delete[] _wifi_config;
-      _wifi_config = configs;
-      _config_size = _config_size + 1;
-    }
-  }
-
   return ret;
 }
 
@@ -188,7 +155,7 @@ int wifi_config_update(const char *f) {
 #else
   File config_file = LittleFS.open(f, "w");
   for (int i = 0; i < _config_size; ++i) {
-    if (_wifi_config[i].is_valid()) {
+    if (!_wifi_config[i].is_valid()) {
       continue;
     }
 
