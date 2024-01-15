@@ -47,7 +47,16 @@ void setup() {
   }
 
   if (network_manager.status() != WL_CONNECTED) {
-    network_manager.softAP("ESP_32", "12345678");
+    const char *_AP_SSID = "ESP_%s";
+    const char *_AP_PASSWD = "ESP3223PSE";
+    size_t len = snprintf(NULL, 0, _AP_SSID, WiFi.macAddress().c_str()) + 1;
+    char ssid[len];
+    snprintf(ssid, len, _AP_SSID, WiFi.macAddress().c_str());
+
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig({192, 168, 0, 1}, {192, 168, 0, 1}, {255, 255, 255, 0});
+    WiFi.softAP(ssid, _AP_PASSWD);
+
     IPAddress myIP = network_manager.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(myIP);
