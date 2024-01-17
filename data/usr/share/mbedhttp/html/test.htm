@@ -1,1 +1,66 @@
-hello test.
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Canvas tutorial</title>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="tutorial"></canvas>
+    <script>
+      var gateway = `ws://${window.location.hostname}/ws`;
+      var websocket;
+      var ctx;
+      var colors = ["#526E8C", "#1B91E3", "#29B191", "#E5473C"];
+
+      var getRandColor = function () {
+        return Math.floor(Math.random() * colors.length);
+      };
+
+      function draw(event) {
+        var color = colors[getRandColor()];
+        ctx.fillStyle = color;
+        ctx.rect(10, 10, 150, 100);
+        ctx.fill();
+
+        websocket.send(color);
+      };
+
+      function onOpen(event) {
+        console.log("Connection opened");
+      }
+      function onClose(event) {
+        console.log("Connection closed");
+        setTimeout(initWebSocket, 2000);
+      }
+
+      function onMessage(event) {
+        console.log("Connection closed");
+      }
+
+      function initWebSocket() {
+        console.log("Trying to open a WebSocket connection...");
+        websocket = new WebSocket(gateway);
+        websocket.onopen = onOpen;
+        websocket.onclose = onClose;
+        websocket.onmessage = onMessage; // <-- add this line
+      }
+
+      function onLoad() {
+        const canvas = document.getElementById("tutorial");
+        if (canvas.getContext) {
+          ctx = canvas.getContext("2d");
+        }
+
+        canvas.addEventListener("mousedown", draw);
+        initWebSocket();
+      }
+
+      window.addEventListener("load", onLoad);
+    </script>
+  </body>
+</html>
