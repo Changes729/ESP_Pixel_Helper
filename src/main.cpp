@@ -167,7 +167,7 @@ void setup() {
         .gateway = static_cast<uint32_t>(gateway),
         .mask_bit = mask_bit_count,
     };
-    network_manager.update_dhcpcd("wlan0", config);
+    network_manager.update_dhcpcd("/etc/dhcpcd.conf");
     request->send(200);
   });
 
@@ -191,7 +191,7 @@ void setup() {
               }
 
               log_n("update ssid and passwd: %s %s\n", ssid, passwd);
-              network_manager.update_wpa_supplicant(ssid, passwd);
+              network_manager.update_wpa_supplicant("/etc/wpa_supplicant.conf");
 
               request->send(200);
             });

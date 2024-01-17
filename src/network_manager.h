@@ -24,14 +24,17 @@
 
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
+#define WIFI_CONFIGS_MAX 3
+
 /* Public typedef ------------------------------------------------------------*/
+typedef struct _net_interface {
+  const char *iface;
+  net_config_t conf;
+} net_iface_t;
+
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-/**
- * @brief copy implement from wifi.h.
- *
- */
 class NetworkManager : public WiFiGenericClass,
                        public WiFiSTAClass, /** station */
                        public WiFiScanClass,
@@ -41,15 +44,16 @@ public:
   virtual ~NetworkManager();
 
   wl_status_t begin();
-  bool config_dhcpcd(const char *config_file);
-  bool config_wpa_supplicant(const char *config_file);
+  bool config_dhcpcd(const char *file);
+  bool config_wpa_supplicant(const char *file);
 
-  bool update_dhcpcd(const char* iface, const net_config_t& net_config);
-  bool update_wpa_supplicant(const char* ssid, const char* passwd);
+  bool update_dhcpcd(const char *file);
+  bool update_wpa_supplicant(const char *file);
 
 private:
-  const char* _dhcpcd_config_file;
-  const char* _wpa_config_file;
+  net_iface_t _iface_eth;
+  net_iface_t _iface_wlan;
+  wifi_ap_t _wifi_configs[WIFI_CONFIGS_MAX];
 };
 
 #endif /* NETWORK_MANAGER_H */

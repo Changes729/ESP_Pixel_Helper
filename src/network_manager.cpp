@@ -1,8 +1,16 @@
 /** See a brief introduction (right-hand button) */
 #include "network_manager.h"
 /* Private include -----------------------------------------------------------*/
+#if ESP32 || ESP8266
+#include <LittleFS.h>
+#endif
+
 /* Private namespace ---------------------------------------------------------*/
+using namespace fs;
+
 /* Private define ------------------------------------------------------------*/
+#define NET_CONF_MAX_SIZE 1024 /** 1k */
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -17,20 +25,18 @@
  */
 
 NetworkManager::NetworkManager()
-    : _dhcpcd_config_file{nullptr}, _wpa_config_file{nullptr} {}
+    : _iface_eth{"eth0", NET_DEFAULT_CFG},
+      _iface_wlan{"wlan0", NET_DEFAULT_CFG}, _wifi_configs{} {}
 
 NetworkManager::~NetworkManager() {}
 
 wl_status_t NetworkManager::begin() {
   wl_status_t status = WL_NO_SHIELD;
-  auto config_size = wifi_config_count();
-  for (int i = 0; i < config_size; ++i) {
-    auto config = wifi_config_get(i);
-    if (config->is_valid()) {
-      auto ssid = config->get_ssid();
-      auto passwd = config->get_passwd();
-      log_n("connect to ssid: %s\n", ssid);
-      status = WiFiSTAClass::begin(ssid, passwd);
+  for (int i = 0; i < WIFI_CONFIGS_MAX; ++i) {
+    auto &config = _wifi_configs[i];
+    if (!config.ssid.isEmpty()) {
+      log_n("connect to ssid: %s\n", config.ssid);
+      status = WiFiSTAClass::begin(config.ssid, config.passwd);
       /** NOTE: connect first ssid currently. */
       break;
     }
@@ -39,33 +45,84 @@ wl_status_t NetworkManager::begin() {
   return status;
 }
 
-bool NetworkManager::config_dhcpcd(const char *config_file) {
-  bool ret = false;
-  _dhcpcd_config_file = config_file;
-  if (net_config_init(config_file) == 0) {
-    auto conf = net_config_get("wlan0");
-    uint32_t subnet = 0xFFFFFFFF >> (32 - conf->mask_bit);
+bool NetworkManager::config_dhcpcd(const char *path) {
+#if __APPLE__ || __linux__
+  /** read file */
+  char buf[]{"interface wlan0\n"
+             "static ip_address=192.168.1.23/24\n"
+             "static routers=192.168.1.1\n"
+             "static domain_name_servers=192.168.1.1\n"};
 
-    log_d(IPAddress(config->address));
-    log_d(IPAddress(subnet));
+#else
+  char buf[NET_CONF_MAX_SIZE]{0};
 
-    ret = WiFiSTAClass::config(conf->address, conf->gateway, subnet);
+  /** file should exists. */
+  if (LittleFS.exists(path)) {
+    /** open file */
+    File file = LittleFS.open(path, FILE_READ);
+    file.readBytes(buf, sizeof(buf));
+    file.close();
   }
-  return ret;
+#endif
+
+  net_config_load(buf, _iface_eth.iface, &_iface_eth.conf);
+  net_config_load(buf, _iface_wlan.iface, &_iface_wlan.conf);
+  return 0;
 }
 
-bool NetworkManager::config_wpa_supplicant(const char *config_file) {
-  _wpa_config_file = config_file;
-  return wifi_config_init(config_file);
+bool NetworkManager::config_wpa_supplicant(const char *path) {
+#if __APPLE__ || __linux__
+  /** read file */
+  char buf[]{"network={\n"
+             "    ssid=\"your-networks-SSID\"\n"
+             "    psk=\"your-networks-password\"\n"
+             "}"};
+
+#else
+  char buf[NET_CONF_MAX_SIZE]{0};
+
+  /** file should exists. */
+  if (LittleFS.exists(path)) {
+    /** open file */
+    File file = LittleFS.open(path, FILE_READ);
+    file.readBytes(buf, sizeof(buf));
+    file.close();
+  }
+#endif
+
+  return wifi_config_load(buf, _wifi_configs, WIFI_CONFIGS_MAX);
 }
 
-bool NetworkManager::update_dhcpcd(const char *iface,
-                                   const net_config_t &net_config) {
-  return net_config_set(iface, net_config) &&
-         net_config_update(_dhcpcd_config_file);
+bool NetworkManager::update_dhcpcd(const char *path) {
+  char buf[NET_CONF_MAX_SIZE]{0};
+  size_t used = 0;
+  used += net_config_print(buf, NET_CONF_MAX_SIZE - used, _iface_eth.iface,
+                           &_iface_eth.conf);
+  used += net_config_print(buf, NET_CONF_MAX_SIZE - used, _iface_wlan.iface,
+                           &_iface_wlan.conf);
+
+#if __APPLE__ || __linux__
+#else
+  File file = LittleFS.open(path, FILE_WRITE);
+  file.print(buf);
+  file.close();
+#endif
+
+  return used;
 }
 
-bool NetworkManager::update_wpa_supplicant(const char *ssid,
-                                           const char *passwd) {
-  return wifi_config_set(ssid, passwd) && wifi_config_update("/etc/wpa_supplicant.conf");
+bool NetworkManager::update_wpa_supplicant(const char *path) {
+  char buf[NET_CONF_MAX_SIZE]{0};
+  size_t used = 0;
+  used += wifi_config_print(buf, NET_CONF_MAX_SIZE - used, _wifi_configs,
+                            WIFI_CONFIGS_MAX);
+
+#if __APPLE__ || __linux__
+#else
+  File file = LittleFS.open(path, FILE_WRITE);
+  file.print(buf);
+  file.close();
+#endif
+
+  return used;
 }
