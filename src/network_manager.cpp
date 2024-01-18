@@ -37,8 +37,10 @@ wl_status_t NetworkManager::begin() {
     if (!config.ssid.isEmpty()) {
       log_n("connect to ssid: %s\n", config.ssid);
       status = WiFiSTAClass::begin(config.ssid, config.passwd);
-      /** NOTE: connect first ssid currently. */
-      break;
+      waitForConnectResult(20000);
+      if (WiFiSTAClass::isConnected()) {
+        break;
+      }
     }
   }
 
@@ -74,8 +76,8 @@ bool NetworkManager::config_wpa_supplicant(const char *path) {
 #if __APPLE__ || __linux__
   /** read file */
   char buf[]{"network={\n"
-             "    ssid=\"your-networks-SSID\"\n"
-             "    psk=\"your-networks-password\"\n"
+             "ssid=\"your-networks-SSID\"\n"
+             "psk=\"your-networks-password\"\n"
              "}"};
 
 #else

@@ -108,7 +108,7 @@ void setup() {
           network_manager.localIP().toString().c_str());
   }
 
-  if (network_manager.status() != WL_CONNECTED) {
+  if (!network_manager.isConnected()) {
     const char *_AP_SSID = "ESP_%s";
     const char *_AP_PASSWD = "ESP3223PSE";
     size_t len = snprintf(NULL, 0, _AP_SSID, WiFi.macAddress().c_str()) + 1;

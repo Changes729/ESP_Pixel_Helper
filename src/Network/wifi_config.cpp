@@ -42,7 +42,7 @@ int wifi_config_load(const char *str, wifi_ap_t *configs, size_t max) {
     if (false == in_block) {
       in_block = (strncmp(str, "network={", str_len) == 0);
     } else /** in_block */ {
-      if (arg_len == 0 && strncmp(str, "}", 1) == 0) {
+      if (strncmp(str, "}", 1) == 0) {
         in_block = false;
         index += 1;
       } else if (strncmp(str, "ssid", info_len) == 0) {
