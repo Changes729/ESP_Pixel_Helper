@@ -19,25 +19,9 @@ AsyncWebSocket ws("/ws");
 NetworkManager network_manager;
 
 const uint16_t PixelCount = 16 * 16;
-const uint8_t PixelPin =
-    32; // make sure to set this to the correct pin, ignored for Esp8266
-
-#define colorSaturation 128
+const uint8_t PixelPin = 32;
 
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> strip(PixelCount, PixelPin);
-
-RgbColor red(colorSaturation, 0, 0);
-RgbColor green(0, colorSaturation, 0);
-RgbColor blue(0, 0, colorSaturation);
-RgbColor white(colorSaturation);
-RgbColor black(0);
-
-HslColor hslRed(red);
-HslColor hslGreen(green);
-HslColor hslBlue(blue);
-HslColor hslWhite(white);
-HslColor hslBlack(black);
-
 RgbColor current_color;
 
 void notFound(AsyncWebServerRequest *request) {
@@ -205,49 +189,6 @@ void setup() {
 }
 
 void loop() {
-#if 0
-  // set the colors,
-  // if they don't match in order, you need to use NeoGrbFeature feature
-  strip.SetPixelColor(0, red);
-  strip.SetPixelColor(1, green);
-  strip.SetPixelColor(2, blue);
-  strip.SetPixelColor(3, white);
-  // the following line demonstrates rgbw color support
-  // if the NeoPixels are rgbw types the following line will compile
-  // if the NeoPixels are anything else, the following line will give an error
-  // strip.SetPixelColor(3, RgbwColor(colorSaturation));
-  strip.Show();
-
-  delay(5000);
-
-  // turn off the pixels
-  strip.SetPixelColor(0, black);
-  strip.SetPixelColor(1, black);
-  strip.SetPixelColor(2, black);
-  strip.SetPixelColor(3, black);
-  strip.Show();
-
-  delay(5000);
-
-  // set the colors,
-  // if they don't match in order, you may need to use NeoGrbFeature feature
-  strip.SetPixelColor(0, hslRed);
-  strip.SetPixelColor(1, hslGreen);
-  strip.SetPixelColor(2, hslBlue);
-  strip.SetPixelColor(3, hslWhite);
-  strip.Show();
-
-  delay(5000);
-
-  // turn off the pixels
-  strip.SetPixelColor(0, hslBlack);
-  strip.SetPixelColor(1, hslBlack);
-  strip.SetPixelColor(2, hslBlack);
-  strip.SetPixelColor(3, hslBlack);
-  strip.Show();
-#elif 1
   strip.ClearTo(current_color);
   strip.Show();
-  delay(10);
-#endif
 }

@@ -29,10 +29,10 @@ int net_config_load(const char *str, const char *name, net_config_t *cfg) {
       if (arg_len == 0) {
         continue;
       } else if (strncmp(str, "interface", info_len) == 0) {
-        bool cfg_is_same = strncmp(arg_pos + 1, name, arg_len);
-        if (false == loading && cfg_is_same == 0) {
+        bool cfg_is_same = strncmp(arg_pos + 1, name, arg_len) == 0;
+        if (false == loading && cfg_is_same) {
           loading = true;
-        } else if (false == cfg_is_same) {
+        } else if (loading && false == cfg_is_same) {
           break;
         }
       } else if (strncmp(str, "static", info_len) == 0) {
@@ -48,7 +48,7 @@ int net_config_load(const char *str, const char *name, net_config_t *cfg) {
           uint32_t ip;
           int mask_bit;
           uint8_t *ipv4 = (uint8_t *)&ip;
-          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd/%hhd", &ipv4[0],
+          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd/%d", &ipv4[0],
                              &ipv4[1], &ipv4[2], &ipv4[3], &mask_bit);
           if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
             cfg->address = ip;
@@ -93,4 +93,13 @@ int net_config_print(char *buffer, size_t size, const char *name,
                    ipv4[1], ipv4[2], ipv4[3]);
 
   return used;
+}
+
+bool is_config_valid(net_config_t cfg) {
+  return cfg.address != 0 && cfg.gateway != 0 && cfg.mask_bit >= 0 &&
+         cfg.mask_bit <= 32;
+}
+
+uint32_t net_config_get_mask(net_config_t cfg) {
+  return 0xFFFFFFFF << (32 - cfg.mask_bit);
 }

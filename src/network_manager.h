@@ -3,6 +3,7 @@
 #define NETWORK_MANAGER_H
 #pragma once
 /* Public include ------------------------------------------------------------*/
+#include <ETH.h>
 #include <stdint.h>
 
 #include "IPAddress.h"
@@ -35,10 +36,37 @@ typedef struct _net_interface {
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-class NetworkManager : public WiFiGenericClass,
+class WiFiGenericEventHelper : public WiFiGenericClass {
+public:
+  WiFiGenericEventHelper();
+
+protected:
+  virtual void _on_wifi_event(WiFiEvent_t event) = 0;
+
+private:
+  static void _wifi_event_sender(WiFiEvent_t event);
+  static WiFiGenericEventHelper *_wifi_event_receiver;
+};
+
+class ETHClass_ext : public ETHClass {
+public:
+  ETHClass_ext();
+
+  inline bool is_connect() { return _eth_connected; }
+  uint8_t waitForConnectResult(unsigned long timeoutLength = 60000);
+
+protected:
+  void _on_eth_event(WiFiEvent_t event);
+
+private:
+  bool _eth_connected;
+};
+
+class NetworkManager : public WiFiGenericEventHelper,
                        public WiFiSTAClass, /** station */
                        public WiFiScanClass,
-                       public WiFiAPClass {
+                       public WiFiAPClass,
+                       public ETHClass_ext {
 public:
   NetworkManager();
   virtual ~NetworkManager();
@@ -49,6 +77,11 @@ public:
 
   bool update_dhcpcd(const char *file);
   bool update_wpa_supplicant(const char *file);
+
+  IPAddress localIP();
+
+protected:
+  virtual void _on_wifi_event(WiFiEvent_t event);
 
 private:
   net_iface_t _iface_eth;

@@ -39,7 +39,11 @@ int net_config_load(const char *str, const char *name, net_config_t *cfg);
  * @param cfg loaded configure.
  * @return int return print string length.
  */
-int net_config_print(char *buffer, size_t size, const char *name, net_config_t *cfg);
+int net_config_print(char *buffer, size_t size, const char *name,
+                     net_config_t *cfg);
+
+bool is_config_valid(net_config_t cfg);
+uint32_t net_config_get_mask(net_config_t cfg);
 
 /* Public class --------------------------------------------------------------*/
 #endif /* UNIX_NET_CONFIG_H */
