@@ -1,6 +1,7 @@
 /** See a brief introduction (right-hand button) */
 #include "wifi_config.h"
 /* Private include -----------------------------------------------------------*/
+#include <esp_wifi.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -81,4 +82,14 @@ int wifi_config_print(char *buffer, size_t size, wifi_ap_t *configs,
   }
 
   return used;
+}
+
+int wifi_get_mac(char *buffer, size_t buff_size) {
+  uint8_t mac[6];
+
+  if (ESP_FAIL == esp_read_mac(mac, ESP_MAC_WIFI_STA)) {
+    esp_wifi_get_mac((wifi_interface_t)ESP_IF_WIFI_STA, mac);
+  }
+  return snprintf(buffer, buff_size, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],
+                  mac[1], mac[2], mac[3], mac[4], mac[5]);
 }

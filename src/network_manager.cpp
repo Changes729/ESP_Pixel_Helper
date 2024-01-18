@@ -1,9 +1,7 @@
 /** See a brief introduction (right-hand button) */
 #include "network_manager.h"
 /* Private include -----------------------------------------------------------*/
-#if ESP32 || ESP8266
 #include <LittleFS.h>
-#endif
 
 /* Private namespace ---------------------------------------------------------*/
 using namespace fs;
@@ -194,6 +192,17 @@ bool NetworkManager::update_wpa_supplicant(const char *path) {
 IPAddress NetworkManager::localIP() {
   return ETHClass_ext::is_connect() ? ETHClass_ext::localIP()
                                     : WiFiSTAClass::localIP();
+}
+
+void NetworkManager::startAP() {
+#define SSID_HEAD "ESP_"
+  char ssid[strlen(SSID_HEAD) + 18]{SSID_HEAD};
+  char passwd[]{"ESP3223PSE"};
+  char *ssid_mac = ssid + strlen(SSID_HEAD);
+  wifi_get_mac(ssid_mac, 18);
+  WiFiGenericClass::mode(WIFI_AP);
+  softAPConfig({192, 168, 0, 1}, {192, 168, 0, 1}, {255, 255, 255, 0});
+  softAP(ssid, passwd);
 }
 
 void NetworkManager::_on_wifi_event(WiFiEvent_t event) {

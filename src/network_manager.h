@@ -79,6 +79,7 @@ public:
   bool update_wpa_supplicant(const char *file);
 
   IPAddress localIP();
+  void startAP();
 
 protected:
   virtual void _on_wifi_event(WiFiEvent_t event);

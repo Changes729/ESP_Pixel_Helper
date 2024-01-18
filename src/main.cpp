@@ -24,6 +24,9 @@ const uint8_t PixelPin = 32;
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> strip(PixelCount, PixelPin);
 RgbColor current_color;
 
+static unsigned long _disconnect_ts = 0;
+static void check_network_state();
+
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
@@ -82,31 +85,8 @@ void setup() {
 
   network_manager.config_dhcpcd("/etc/dhcpcd.conf");
   network_manager.config_wpa_supplicant("/etc/wpa_supplicant.conf");
-  if (network_manager.begin() != WL_NO_SHIELD) {
-    while (network_manager.status() != WL_CONNECTED) {
-      delay(500);
-      log_n(".");
-    }
+  network_manager.begin();
 
-    log_n("\nWiFi connected\nIP address: %s\n",
-          network_manager.localIP().toString().c_str());
-  }
-
-  if (!network_manager.isConnected()) {
-    const char *_AP_SSID = "ESP_%s";
-    const char *_AP_PASSWD = "ESP3223PSE";
-    size_t len = snprintf(NULL, 0, _AP_SSID, WiFi.macAddress().c_str()) + 1;
-    char ssid[len];
-    snprintf(ssid, len, _AP_SSID, WiFi.macAddress().c_str());
-
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig({192, 168, 0, 1}, {192, 168, 0, 1}, {255, 255, 255, 0});
-    WiFi.softAP(ssid, _AP_PASSWD);
-
-    IPAddress myIP = network_manager.softAPIP();
-    Serial.print("AP IP address: ");
-    Serial.println(myIP);
-  }
   // this resets all the neopixels to an off state
   strip.Begin();
   strip.Show();
@@ -191,4 +171,21 @@ void setup() {
 void loop() {
   strip.ClearTo(current_color);
   strip.Show();
+
+  check_network_state();
+}
+
+static void check_network_state() {
+  if (network_manager.getMode() == WIFI_AP) {
+    /** nothing todo. */
+  } else if (!network_manager.isConnected()) {
+    if (_disconnect_ts == 0) {
+      _disconnect_ts = millis();
+    } else if (millis() - _disconnect_ts > 5000) {
+      network_manager.startAP();
+      _disconnect_ts = 0;
+    }
+  } else { /** if(network_manager.isConnected()) */
+    _disconnect_ts = 0;
+  }
 }

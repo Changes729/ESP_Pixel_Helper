@@ -29,4 +29,6 @@ int wifi_config_load(const char *str, wifi_ap_t *configs, size_t max);
 int wifi_config_print(char *buffer, size_t buff_size, wifi_ap_t *configs,
                       size_t count);
 
+int wifi_get_mac(char *buffer, size_t buff_size);
+
 #endif /* WIFI_CONFIG_H */
