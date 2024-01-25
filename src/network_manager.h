@@ -23,6 +23,8 @@
 #include "Network/net_config.h"
 #include "Network/wifi_config.h"
 
+#include "Language/instance.h"
+
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
 #define WIFI_CONFIGS_MAX 3
@@ -62,24 +64,39 @@ private:
   bool _eth_connected;
 };
 
-class NetworkManager : public WiFiGenericEventHelper,
+class NetworkManager : public Instance<NetworkManager>,
+                       public WiFiGenericEventHelper,
                        public WiFiSTAClass, /** station */
                        public WiFiScanClass,
                        public WiFiAPClass,
                        public ETHClass_ext {
-public:
+private: /** instance */
+  friend Instance<NetworkManager>;
   NetworkManager();
   virtual ~NetworkManager();
 
+public:
   wl_status_t begin();
+
+  IPAddress localIP();
+  void startAP();
+
+public: /** storage */
   bool config_dhcpcd(const char *file);
   bool config_wpa_supplicant(const char *file);
 
   bool update_dhcpcd(const char *file);
   bool update_wpa_supplicant(const char *file);
 
-  IPAddress localIP();
-  void startAP();
+public: /** wifi data manager */
+  inline size_t wifi_ap_count() { return WIFI_CONFIGS_MAX; }
+  inline const wifi_ap_t *get_wifi_ap_list() { return _wifi_configs; }
+  void update_wifi(const wifi_ap_t *ap_list, size_t count);
+
+public: /** dhcpcd data manager */
+  const net_iface_t& get_eth_iface();
+  const net_iface_t& get_wlan_iface();
+  void update_iface(const net_iface_t &new_cfg);
 
 protected:
   virtual void _on_wifi_event(WiFiEvent_t event);

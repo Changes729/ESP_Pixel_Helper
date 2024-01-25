@@ -63,21 +63,20 @@ int wifi_config_print(char *buffer, size_t size, wifi_ap_t *configs,
                       size_t count) {
 
   size_t used = 0;
-  uint8_t *ipv4 = nullptr;
   if (buffer == nullptr || configs == nullptr || count == 0) {
     return 0;
   }
 
   for (int i = 0; i < count; ++i) {
-    if (configs->ssid.isEmpty()) {
+    if (configs[i].ssid.isEmpty()) {
       continue;
     }
 
-    used += snprintf(buffer, size - used,
+    used += snprintf(buffer + used, size - used,
                      "network={\n"
                      "ssid=\"%s\"\n"
                      "psk=\"%s\"\n"
-                     "}",
+                     "}\n",
                      configs[i].ssid.c_str(), configs[i].passwd.c_str());
   }
 

@@ -48,8 +48,8 @@ int net_config_load(const char *str, const char *name, net_config_t *cfg) {
           uint32_t ip;
           int mask_bit;
           uint8_t *ipv4 = (uint8_t *)&ip;
-          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd/%d", &ipv4[0],
-                             &ipv4[1], &ipv4[2], &ipv4[3], &mask_bit);
+          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd/%d", &ipv4[0], &ipv4[1],
+                             &ipv4[2], &ipv4[3], &mask_bit);
           if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
             cfg->address = ip;
             cfg->mask_bit = mask_bit;
@@ -82,15 +82,16 @@ int net_config_print(char *buffer, size_t size, const char *name,
     return 0;
   }
 
-  used += snprintf(buffer, size - used, "interface %s\n", name);
+  used += snprintf(buffer + used, size - used, "interface %s\n", name);
 
   ipv4 = (uint8_t *)&cfg->address;
-  used += snprintf(buffer, size - used, "static ip_address=%d.%d.%d.%d/%d\n",
-                   ipv4[0], ipv4[1], ipv4[2], ipv4[3], cfg->mask_bit);
+  used +=
+      snprintf(buffer + used, size - used, "static ip_address=%d.%d.%d.%d/%d\n",
+               ipv4[0], ipv4[1], ipv4[2], ipv4[3], cfg->mask_bit);
 
   ipv4 = (uint8_t *)&cfg->gateway;
-  used += snprintf(buffer, size - used, "static routers=%d.%d.%d.%d\n", ipv4[0],
-                   ipv4[1], ipv4[2], ipv4[3]);
+  used += snprintf(buffer + used, size - used, "static routers=%d.%d.%d.%d\n",
+                   ipv4[0], ipv4[1], ipv4[2], ipv4[3]);
 
   return used;
 }
@@ -101,5 +102,18 @@ bool is_config_valid(net_config_t cfg) {
 }
 
 uint32_t net_config_get_mask(net_config_t cfg) {
-  return 0xFFFFFFFF << (32 - cfg.mask_bit);
+  return 0xFFFFFFFF >> (32 - cfg.mask_bit);
+}
+
+uint8_t ip_to_mask(uint32_t mask) {
+  uint32_t mask_32 = static_cast<uint32_t>(mask);
+  uint8_t mask_bit_count = 0;
+  for (int i = 0; i < 32; ++i) {
+    if ((mask_32 & 0x80000000) == 0x80000000) {
+      break;
+    }
+    mask_bit_count += 1;
+    mask_32 <<= 1;
+  }
+  return 32 - mask_bit_count;
 }

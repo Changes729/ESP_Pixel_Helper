@@ -7,7 +7,7 @@
 using namespace fs;
 
 /* Private define ------------------------------------------------------------*/
-#define NET_CONF_MAX_SIZE 1024 /** 1k */
+#define NET_CONF_MAX_SIZE 1024 / 3 /** 1k */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
@@ -109,7 +109,7 @@ wl_status_t NetworkManager::begin() {
 }
 
 bool NetworkManager::config_dhcpcd(const char *path) {
-#if __APPLE__ || __linux__
+#if 0
   /** read file */
   char buf[]{"interface wlan0\n"
              "static ip_address=192.168.1.23/24\n"
@@ -133,7 +133,7 @@ bool NetworkManager::config_dhcpcd(const char *path) {
 }
 
 bool NetworkManager::config_wpa_supplicant(const char *path) {
-#if __APPLE__ || __linux__
+#if 0
   /** read file */
   char buf[]{"network={\n"
              "ssid=\"your-networks-SSID\"\n"
@@ -158,17 +158,14 @@ bool NetworkManager::config_wpa_supplicant(const char *path) {
 bool NetworkManager::update_dhcpcd(const char *path) {
   char buf[NET_CONF_MAX_SIZE]{0};
   size_t used = 0;
-  used += net_config_print(buf, NET_CONF_MAX_SIZE - used, _iface_eth.iface,
-                           &_iface_eth.conf);
-  used += net_config_print(buf, NET_CONF_MAX_SIZE - used, _iface_wlan.iface,
-                           &_iface_wlan.conf);
+  used += net_config_print(buf + used, NET_CONF_MAX_SIZE - used,
+                           _iface_eth.iface, &_iface_eth.conf);
+  used += net_config_print(buf + used, NET_CONF_MAX_SIZE - used,
+                           _iface_wlan.iface, &_iface_wlan.conf);
 
-#if __APPLE__ || __linux__
-#else
   File file = LittleFS.open(path, FILE_WRITE);
   file.print(buf);
   file.close();
-#endif
 
   return used;
 }
@@ -179,14 +176,36 @@ bool NetworkManager::update_wpa_supplicant(const char *path) {
   used += wifi_config_print(buf, NET_CONF_MAX_SIZE - used, _wifi_configs,
                             WIFI_CONFIGS_MAX);
 
-#if __APPLE__ || __linux__
-#else
   File file = LittleFS.open(path, FILE_WRITE);
   file.print(buf);
   file.close();
-#endif
 
   return used;
+}
+const net_iface_t &NetworkManager::get_eth_iface() { return _iface_eth; }
+
+const net_iface_t &NetworkManager::get_wlan_iface() { return _iface_wlan; }
+
+void NetworkManager::update_iface(const net_iface_t &new_cfg) {
+  if (strcmp(new_cfg.iface, "eth0") == 0) {
+    _iface_eth = new_cfg;
+  } else if (strcmp(new_cfg.iface, "wlan0") == 0) {
+    _iface_wlan = new_cfg;
+  }
+}
+
+void NetworkManager::update_wifi(const wifi_ap_t *ap_list, size_t count) {
+  if (count > WIFI_CONFIGS_MAX) {
+    count = WIFI_CONFIGS_MAX;
+  }
+
+  for (int i = 0; i < count; ++i) {
+    _wifi_configs[i] = ap_list[i];
+  }
+
+  for (int i = count; i < WIFI_CONFIGS_MAX; ++i) {
+    memset(&_wifi_configs[i], 0, sizeof(wifi_ap_t));
+  }
 }
 
 IPAddress NetworkManager::localIP() {
@@ -207,4 +226,12 @@ void NetworkManager::startAP() {
 
 void NetworkManager::_on_wifi_event(WiFiEvent_t event) {
   ETHClass_ext::_on_eth_event(event);
+
+  switch (event) {
+  case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+    log_n("sta got ip: %s", WiFiSTAClass::localIP().toString().c_str());
+    break;
+  default:
+    break;
+  }
 }
