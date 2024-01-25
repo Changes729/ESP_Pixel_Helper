@@ -16,7 +16,7 @@ typedef struct _net_config {
 } net_config_t;
 
 #define NET_DEFAULT_CFG                                                        \
-  net_config_t { .address = 0, .gateway = 0, .mask_bit = 32 }
+  net_config_t { .address = 0, .gateway = 0, .mask_bit = 0 }
 
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
