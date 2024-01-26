@@ -1,26 +1,18 @@
 /** See a brief introduction (right-hand button) */
 #include "wifi_config.h"
 /* Private include -----------------------------------------------------------*/
-#include <assert.h>
-#include <stdlib.h>
+#include <esp_wifi.h>
+#include <stdio.h>
 #include <string.h>
-
-#if ESP32 || ESP8266
-#include <LittleFS.h>
-#endif
-
-#include "wifi_common.h"
 
 /* Private namespace ---------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define NET_CONF_MAX_SIZE 1024 /** 1k */
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static wifi_config *_wifi_config = nullptr;
+static wifi_ap_t *_wifi_config = nullptr;
 static size_t _config_size = 0;
-static wifi_config *_wifi_handler = nullptr;
+static wifi_ap_t *_wifi_handler = nullptr;
 
 /* Private class -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -30,216 +22,71 @@ static void _process_option(const char *iface, const char *option,
 
 /* Private function ----------------------------------------------------------*/
 /* Private class function ----------------------------------------------------*/
-/**
- * @brief  ...
- * @param  None
- * @retval None
- */
-wifi_config::wifi_config(const char *ssid, const char *passwd)
-    : _ssid{ssid ? strdup(ssid) : nullptr},
-      _passwd(passwd ? strdup(passwd) : nullptr) {}
+int wifi_config_load(const char *str, wifi_ap_t *configs, size_t max) {
+  const char *pos = str;
+  size_t str_len = 0;
+  bool in_block = false;
+  size_t index = 0;
+  while (pos != nullptr && index < max) {
+    /** begin *******************************************************/
+    pos = strchr(str, '\n');
 
-wifi_config::wifi_config(wifi_config &&right)
-    : _ssid(nullptr), _passwd(nullptr) {
-  std::swap(_ssid, right._ssid);
-  std::swap(_passwd, right._passwd);
-}
+    /** processing **************************************************/
+    str_len = (pos == nullptr) ? strlen(str) : pos - str;
+    const char *arg_pos = strchr(str, '=');
+    size_t arg_len = (arg_pos == nullptr) ? 0 : pos - arg_pos - 1;
+    size_t info_len = str_len - arg_len - 1;
+    arg_pos += 1;
 
-wifi_config::~wifi_config() {
-  free(_ssid);
-  free(_passwd);
-}
-
-void wifi_config::set_ssid(const char *ssid) {
-  free(_ssid);
-  _ssid = ssid ? strdup(ssid) : nullptr;
-}
-
-void wifi_config::set_passwd(const char *passwd) {
-  free(_passwd);
-  _passwd = passwd ? strdup(passwd) : nullptr;
-}
-
-const char *wifi_config::get_ssid() const { return _ssid; }
-
-const char *wifi_config::get_passwd() const { return _passwd; }
-
-bool wifi_config::is_valid() const {
-  return _ssid != nullptr && _passwd != nullptr;
-}
-
-bool wifi_config::is_ssid_equal(const char *ssid) const {
-  bool same = false;
-  if (is_valid() && ssid != nullptr) {
-    same = strcmp(ssid, _ssid);
-  }
-  return false;
-}
-
-void wifi_config::clear() {
-  free(_ssid);
-  free(_passwd);
-  _ssid = nullptr;
-  _passwd = nullptr;
-}
-
-size_t wifi_config_count() { return _config_size; }
-
-const wifi_config *wifi_config_get(size_t index) {
-  return index < _config_size ? &_wifi_config[index] : nullptr;
-}
-
-int wifi_config_set(const char *ssid, const char *passwd) {
-  int ret = false;
-  if (_config_size != 0) {
-    _wifi_config[0].set_ssid(ssid);
-    _wifi_config[0].set_passwd(passwd);
-    ret = true;
-  }
-  return ret;
-}
-
-int wifi_config_clear(const char *ssid) {
-  for (int i = 0; i < _config_size; ++i) {
-    if (_wifi_config[i].is_ssid_equal(ssid)) {
-      _wifi_config[i].clear();
-      break;
-    }
-  }
-
-  return 0;
-}
-
-int wifi_config_init(const char *f) {
-  int ret = 0;
-
-  do {
-#if __APPLE__ || __linux__
-    /** read file */
-    char buf[NET_CONF_MAX_SIZE]{"network={\n"
-                                "    ssid=\"your-networks-SSID\"\n"
-                                "    psk=\"your-networks-password\"\n"
-                                "}"};
-    _init_config(wifi_resolver::count_settings(buf));
-    wifi_resolver{buf, strlen(buf)}.resolve(_process_option);
-#else
-    /** file should exists. */
-    if (!LittleFS.exists(f)) {
-      ret = -1;
-      break;
+    if (false == in_block) {
+      in_block = (strncmp(str, "network={", str_len) == 0);
+    } else /** in_block */ {
+      if (strncmp(str, "}", 1) == 0) {
+        in_block = false;
+        index += 1;
+      } else if (strncmp(str, "ssid", info_len) == 0) {
+        configs[index].ssid = String{arg_pos + 1, arg_len - 2};
+      } else if (strncmp(str, "psk", info_len) == 0) {
+        configs[index].passwd = String{arg_pos + 1, arg_len - 2};
+      }
     }
 
-    /** open file */
-    File file = LittleFS.open(f, "r");
-    {
-      /** read file */
-      char buf[NET_CONF_MAX_SIZE]{0};
-      size_t buf_size = file.readBytes(buf, sizeof(buf));
-      _init_config(wifi_resolver::count_settings(buf));
-      wifi_resolver{buf, buf_size}.resolve(_process_option);
-    }
-    file.close();
-#endif
-  } while (0);
-
-  return ret;
+    /** end *********************************************************/
+    str = pos + 1;
+  }
+  return index;
 }
 
-int wifi_config_update(const char *f) {
-  assert(_wifi_config != nullptr && f != nullptr);
-  if (_wifi_config == nullptr || f == nullptr) {
+int wifi_config_print(char *buffer, size_t size, wifi_ap_t *configs,
+                      size_t count) {
+
+  size_t used = 0;
+  if (buffer == nullptr || configs == nullptr || count == 0) {
     return 0;
   }
 
-#if __APPLE__ || __linux__
-#else
-  File config_file = LittleFS.open(f, "w");
-  for (int i = 0; i < _config_size; ++i) {
-    if (!_wifi_config[i].is_valid()) {
+  for (int i = 0; i < count; ++i) {
+    if (configs[i].ssid.isEmpty()) {
       continue;
     }
 
-    config_file.println("network={");
-
-    config_file.print("ssid=\"");
-    config_file.print(_wifi_config[i].get_ssid());
-    config_file.println("\"");
-
-    config_file.print("psk=\"");
-    config_file.print(_wifi_config[i].get_passwd());
-    config_file.println("\"");
-
-    config_file.println("}");
-  }
-  config_file.close();
-#endif
-
-  return 0;
-}
-
-int wifi_config_deinit() {
-  delete[] _wifi_config;
-  _wifi_config = nullptr;
-  _config_size = 0;
-  return 0;
-}
-
-static void _init_config(size_t config_count) {
-  if (_config_size == config_count) {
-    return;
+    used += snprintf(buffer + used, size - used,
+                     "network={\n"
+                     "ssid=\"%s\"\n"
+                     "psk=\"%s\"\n"
+                     "}\n",
+                     configs[i].ssid.c_str(), configs[i].passwd.c_str());
   }
 
-  wifi_config_deinit();
-  _wifi_config = new wifi_config[config_count];
-  _config_size = config_count;
-  _wifi_handler = nullptr;
+  return used;
 }
 
-static void _process_option(const char *settings, const char *option,
-                            const char *arg) {
-  assert(settings != nullptr);
-  if (strcmp(settings, "network") == 0) {
-    char *str = strdup(arg);
-    char *handler = str;
-    const char *record = nullptr;
-    const char *param = nullptr;
+int wifi_get_mac(char *buffer, size_t buff_size) {
+  uint8_t mac[6];
 
-    if (strcmp(option, "network") == 0) {
-      if (_wifi_handler == nullptr) {
-        _wifi_handler = _wifi_config;
-      } else {
-        _wifi_handler = _wifi_handler + 1;
-      }
-    } else if (strcmp(option, "ssid") == 0) {
-      for (int i = 0; handler[i] != '\0'; ++i) {
-        if (handler[i] == '\"') {
-          handler[i] = '\0';
-          if (record == nullptr) {
-            record = handler + 1;
-          } else {
-            param = record;
-            break;
-          }
-        }
-      }
-
-      _wifi_handler->set_ssid(param);
-    } else if (strcmp(option, "psk") == 0) {
-      for (int i = 0; handler[i] != '\0'; ++i) {
-        if (handler[i] == '\"') {
-          handler[i] = '\0';
-          if (record == nullptr) {
-            record = handler + 1;
-          } else {
-            param = record;
-            break;
-          }
-        }
-      }
-
-      _wifi_handler->set_passwd(param);
-    }
-
-    free(str);
+  if (ESP_FAIL == esp_read_mac(mac, ESP_MAC_WIFI_STA)) {
+    esp_wifi_get_mac((wifi_interface_t)ESP_IF_WIFI_STA, mac);
   }
+  return snprintf(buffer, buff_size, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],
+                  mac[1], mac[2], mac[3], mac[4], mac[5]);
 }

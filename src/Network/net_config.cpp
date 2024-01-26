@@ -1,249 +1,119 @@
 /** See a brief introduction (right-hand button) */
 #include "net_config.h"
 /* Private include -----------------------------------------------------------*/
-#if ESP32 || ESP8266
-#include <LittleFS.h>
-#endif
-
-#include "net_common.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Private namespace ---------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define required_argument 1
-#define NET_CONF_MAX_SIZE 1024 /** 1k */
-#define NET_DEFAULT_CFG                                                        \
-  net_config_t { .address = 0, .gateway = 0, .mask_bit = 32 }
-
 /* Private typedef -----------------------------------------------------------*/
-typedef struct _net_interface _net_iface_t;
-
 /* Private template ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static _net_iface_t *_iface_cfg = nullptr;
-static size_t _iface_size = 0;
-
 /* Private class -------------------------------------------------------------*/
-struct _net_interface {
-  const char *iface;
-  net_config_t conf;
-};
-
 /* Private function prototypes -----------------------------------------------*/
-static net_config_t *_net_config_get(const char *iface);
-static void _init_iface();
-static bool _is_default_config(const net_config_t &cfg);
-static void _process_option(const char *iface, const char *option,
-                            const char *arg);
-static void _process_opt_static(net_config_t &conf, const char *arg);
-
 /* Private function ----------------------------------------------------------*/
-/* Private class function ----------------------------------------------------*/
-/**
- * @brief  ...
- * @param  None
- * @retval None
- */
-int net_config_set(const char *iface, const net_config_t &cfg) {
-  net_config_t *conf = _net_config_get(iface);
-  if (conf != nullptr) {
-    memcpy(conf, &cfg, sizeof(net_config_t));
-  }
-  return 0;
-}
+int net_config_load(const char *str, const char *name, net_config_t *cfg) {
+  const char *pos = str;
+  size_t str_len = 0;
+  bool loading = false;
+  while (pos != nullptr) {
+    /** begin *******************************************************/
+    pos = strchr(str, '\n');
 
-int net_config_clear(const char *iface) {
-  return net_config_set(iface, NET_DEFAULT_CFG);
-}
-
-const net_config_t *net_config_get(const char *iface) {
-  return _net_config_get(iface);
-}
-
-int net_config_init(const char *f) {
-  int ret = 0;
-
-  do {
-    _init_iface();
-
-#if __APPLE__ || __linux__
-    /** read file */
-    char buf[NET_CONF_MAX_SIZE]{"interface wlan0\n"
-                                "static ip_address=192.168.1.23/24\n"
-                                "static routers=192.168.1.1\n"
-                                "static domain_name_servers=192.168.1.1\n"};
-    net_resolver{buf, strlen(buf)}.resolve(_process_option);
-
-#else
-    /** file should exists. */
-    if (!LittleFS.exists(f)) {
-      ret = -1;
-      break;
-    }
-
-    /** open file */
-    File file = LittleFS.open(f, "r");
+    /** processing **************************************************/
+    str_len = (pos == nullptr) ? strlen(str) : pos - str;
     {
-      /** read file */
-      char buf[NET_CONF_MAX_SIZE]{0};
-      size_t buf_size = file.readBytes(buf, sizeof(buf));
-      net_resolver{buf, buf_size}.resolve(_process_option);
+      const char *arg_pos = strchr(str, ' ');
+      size_t arg_len = (arg_pos == nullptr) ? 0 : pos - arg_pos - 1;
+      size_t info_len = str_len - arg_len - 1;
+      if (arg_len == 0) {
+        continue;
+      } else if (strncmp(str, "interface", info_len) == 0) {
+        bool cfg_is_same = strncmp(arg_pos + 1, name, arg_len) == 0;
+        if (false == loading && cfg_is_same) {
+          loading = true;
+        } else if (loading && false == cfg_is_same) {
+          break;
+        }
+      } else if (strncmp(str, "static", info_len) == 0) {
+        const char *name = arg_pos + 1;
+        const char *data = strchr(name, '=');
+        size_t name_length = (data == nullptr) ? arg_len : data - name - 1;
+        size_t data_length =
+            arg_len - name_length - 1 - 1 /* this 1 is for '=' */;
+        data = data + 1;
+        if (name_length >= arg_len - 1) {
+          continue;
+        } else if (strncmp(name, "ip_address", name_length) == 0) {
+          uint32_t ip;
+          int mask_bit;
+          uint8_t *ipv4 = (uint8_t *)&ip;
+          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd/%d", &ipv4[0], &ipv4[1],
+                             &ipv4[2], &ipv4[3], &mask_bit);
+          if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
+            cfg->address = ip;
+            cfg->mask_bit = mask_bit;
+          }
+        } else if (strncmp(name, "routers", name_length) == 0) {
+          uint32_t ip;
+          uint8_t *ipv4 = (uint8_t *)&ip;
+          int count = sscanf(data, "%hhd.%hhd.%hhd.%hhd", &ipv4[0], &ipv4[1],
+                             &ipv4[2], &ipv4[3]);
+          if (count == 4) {
+            cfg->gateway = ip;
+          }
+        } else if (strncmp(name, "domain_name_servers", name_length) == 0) {
+          /** nothing todo now. */
+        }
+      }
     }
-    file.close();
-#endif
-  } while (0);
 
-  return ret;
+    /** end *********************************************************/
+    str = pos + 1;
+  }
+  return loading;
 }
 
-int net_config_update(const char *f) {
-  assert(_iface_cfg != nullptr && f != nullptr);
-  if (_iface_cfg == nullptr || f == nullptr) {
+int net_config_print(char *buffer, size_t size, const char *name,
+                     net_config_t *cfg) {
+  size_t used = 0;
+  uint8_t *ipv4 = nullptr;
+  if (buffer == nullptr || name == nullptr || cfg == nullptr) {
     return 0;
   }
 
-#if __APPLE__ || __linux__
-#else
-  File config_file = LittleFS.open(f, "w");
-  for (int i = 0; i < _iface_size; ++i) {
-    if (_is_default_config(_iface_cfg[i].conf)) {
-      continue;
-    }
+  used += snprintf(buffer + used, size - used, "interface %s\n", name);
 
-    config_file.print("interface ");
-    config_file.println(_iface_cfg[i].iface);
+  ipv4 = (uint8_t *)&cfg->address;
+  used +=
+      snprintf(buffer + used, size - used, "static ip_address=%d.%d.%d.%d/%d\n",
+               ipv4[0], ipv4[1], ipv4[2], ipv4[3], cfg->mask_bit);
 
-    const uint8_t *ipv4 = (uint8_t *)&_iface_cfg[i].conf.address;
-    config_file.print("static ");
-    config_file.print("ip_address=");
-    config_file.print(ipv4[0]);
-    config_file.print('.');
-    config_file.print(ipv4[1]);
-    config_file.print('.');
-    config_file.print(ipv4[2]);
-    config_file.print('.');
-    config_file.print(ipv4[3]);
-    config_file.print('/');
-    config_file.println(_iface_cfg[i].conf.mask_bit);
+  ipv4 = (uint8_t *)&cfg->gateway;
+  used += snprintf(buffer + used, size - used, "static routers=%d.%d.%d.%d\n",
+                   ipv4[0], ipv4[1], ipv4[2], ipv4[3]);
 
-    ipv4 = (uint8_t *)&_iface_cfg[i].conf.gateway;
-    config_file.print("static ");
-    config_file.print("routers=");
-    config_file.print(ipv4[0]);
-    config_file.print('.');
-    config_file.print(ipv4[1]);
-    config_file.print('.');
-    config_file.print(ipv4[2]);
-    config_file.print('.');
-    config_file.println(ipv4[3]);
-  }
-  config_file.close();
-#endif
-  return 0;
+  return used;
 }
 
-int net_config_deinit() {
-  delete[] _iface_cfg;
-  _iface_cfg = nullptr;
-  return 0;
+bool is_config_valid(net_config_t cfg) {
+  return cfg.address != 0 && cfg.gateway != 0 && cfg.mask_bit >= 0 &&
+         cfg.mask_bit <= 32;
 }
 
-static net_config_t *_net_config_get(const char *iface) {
-  assert(iface != nullptr);
-
-  net_config_t *conf = nullptr;
-  if (_iface_cfg != nullptr) {
-    for (int i = 0; i < _iface_size; ++i) {
-      if (strcmp(_iface_cfg[i].iface, iface) == 0) {
-        conf = &_iface_cfg[i].conf;
-        break;
-      }
-    }
-  }
-
-  return conf;
+uint32_t net_config_get_mask(net_config_t cfg) {
+  return 0xFFFFFFFF >> (32 - cfg.mask_bit);
 }
 
-static void _init_iface() {
-  if (_iface_cfg != nullptr) {
-    return;
-  }
-
-  const char *iface_list[] {
-#if ESP32 || ESP_PLATFORM || ESP8266 || __APPLE__ || __linux__
-    "wlan0",
-#endif
-#if ARDUINO_WT32_ETH01 || ETH_ENABLE
-        "eth0",
-#endif
-  };
-
-  _iface_size = sizeof(iface_list) / sizeof(const char *);
-  _iface_cfg = new _net_iface_t[_iface_size];
-
-  for (int i = 0; i < _iface_size; ++i) {
-    _iface_cfg[i].iface = iface_list[i];
-    _iface_cfg[i].conf.address = 0;
-    _iface_cfg[i].conf.gateway = 0;
-    _iface_cfg[i].conf.mask_bit = 32;
-  }
-}
-
-static bool _is_default_config(const net_config_t &cfg) {
-  net_config_t default_cfg = NET_DEFAULT_CFG;
-  return memcmp(&cfg, &default_cfg, sizeof(net_config_t));
-}
-
-void _process_option(const char *iface, const char *option, const char *arg) {
-  auto config = _net_config_get(iface);
-  struct {
-    const char *name;
-    int has_arg;
-    int val;
-  } cf_configs[]{
-      {"static", required_argument, 'S'},
-  };
-
-  if (config == nullptr) {
-    return;
-  }
-
-  int val = 0;
-  for (auto record : cf_configs) {
-    if (strcmp(record.name, option) == 0) {
-      if (!record.has_arg || arg != nullptr) {
-        val = record.val;
-      }
+uint8_t ip_to_mask(uint32_t mask) {
+  uint32_t mask_32 = static_cast<uint32_t>(mask);
+  uint8_t mask_bit_count = 0;
+  for (int i = 0; i < 32; ++i) {
+    if ((mask_32 & 0x80000000) == 0x80000000) {
       break;
     }
+    mask_bit_count += 1;
+    mask_32 <<= 1;
   }
-
-  switch (val) {
-  case 'S':
-    _process_opt_static(*config, arg);
-    break;
-
-  default:
-    break;
-  }
-}
-
-void _process_opt_static(net_config_t &conf, const char *arg) {
-  uint32_t ip;
-  uint8_t *ipv4 = (uint8_t *)&ip;
-
-  if (strstr(arg, "ip_address") != nullptr) {
-    int mask_bit;
-    int count = sscanf(arg, "ip_address=%d.%d.%d.%d/%d", &ipv4[0], &ipv4[1],
-                       &ipv4[2], &ipv4[3], &mask_bit);
-    if (count == 5 && mask_bit >= 0 && mask_bit <= 32) {
-      conf.address = ip;
-      conf.mask_bit = mask_bit;
-    }
-  } else if (strstr(arg, "routers") != nullptr) {
-    int count = sscanf(arg, "routers=%d.%d.%d.%d", &ipv4[0], &ipv4[1], &ipv4[2],
-                       &ipv4[3]);
-    if (count == 4) {
-      conf.gateway = ip;
-    }
-  }
+  return 32 - mask_bit_count;
 }

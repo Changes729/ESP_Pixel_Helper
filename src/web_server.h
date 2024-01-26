@@ -1,34 +1,27 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef WIFI_CONFIG_H
-#define WIFI_CONFIG_H
+#ifndef WEB_SERVER_H
+#define WEB_SERVER_H
 #pragma once
 /* Public include ------------------------------------------------------------*/
-#include <WString.h>
+#include <ESPAsyncWebServer.h>
+
+#include "Language/instance.h"
 
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
 /* Public typedef ------------------------------------------------------------*/
-typedef struct _wifi_config {
-  String ssid;
-  String passwd;
-} wifi_ap_t;
-
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-/**
- * @brief load a named configure from str.
- *
- * @param str config strings. content should be like UNIX dhcpcd.conf
- * @param configs config array.
- * @param size_t max configure size.
- * @return int return loaded count.
- */
-int wifi_config_load(const char *str, wifi_ap_t *configs, size_t max);
+class Websocket : protected AsyncWebSocket {
+public:
+  Websocket(const char *url, AwsEventHandler handler);
+};
 
-int wifi_config_print(char *buffer, size_t buff_size, wifi_ap_t *configs,
-                      size_t count);
+class WebServer : public Instance<WebServer>, public AsyncWebServer {
+private:
+  friend Instance<WebServer>;
+  WebServer();
+};
 
-int wifi_get_mac(char *buffer, size_t buff_size);
-
-#endif /* WIFI_CONFIG_H */
+#endif /* WEB_SERVER_H */

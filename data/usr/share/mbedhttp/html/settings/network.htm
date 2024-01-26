@@ -3,73 +3,25 @@
   <body>
     <form>
       <fieldset>
-        <div>
-          <label for="ssid">SSID</label>
-          <input value="" id="ssid" placeholder="SSID" />
-        </div>
-        <div>
-          <label for="password">Password</label>
-          <input
-            type="password"
-            value=""
-            id="password"
-            placeholder="PASSWORD"
-          />
-        </div>
-        <!-- <div>
-          <label for="static_ip">Static IP</label>
-          <input value="" id="static_ip" placeholder="static ip" />
-        </div>
-        <div>
-          <label for="gateway">Gateway</label>
-          <input value="" id="gateway" placeholder="gateway" />
-        </div>
-        <div>
-          <label for="mask">MASK</label>
-          <input value="" id="mask" placeholder="Net Mask" />
-        </div> -->
-        <div>
-          <button
-            class="primary"
-            id="savebtn"
-            type="button"
-            onclick="myFunction()"
-          >
-            SAVE
-          </button>
-        </div>
+        <legend>WiFi Settings</legend>
+        <div id="wifi-settings"></div>
+        <button type="button" id="add-wifi-settings"> + </button>
       </fieldset>
+      <fieldset>
+        <legend>IP Settings</legend>
+        <div
+          id="ip-settings"
+          style="
+            display: grid;
+            grid-template-columns: auto 1fr;
+            column-gap: 10px;
+          "
+        ></div>
+      </fieldset>
+      <div>
+        <button class="primary" id="savebtn" type="button">SAVE</button>
+      </div>
     </form>
   </body>
-  <script>
-    function myFunction() {
-      console.log("button was clicked!");
-      var ssid = document.getElementById("ssid").value;
-      var password = document.getElementById("password").value;
-      var static_ip = document.getElementById("static_ip").value;
-      var gateway = document.getElementById("gateway").value;
-      var mask = document.getElementById("mask").value;
-
-      var details = {
-        ssid: ssid,
-        passwd: password
-      };
-
-      var formBody = [];
-      for (var property in details) {
-        var encodedKey = encodeURIComponent(property);
-        var encodedValue = encodeURIComponent(details[property]);
-        formBody.push(encodedKey + "=" + encodedValue);
-      }
-      formBody = formBody.join("&");
-
-      fetch("/api/wpa_supplicant/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-        body: formBody,
-      });
-    }
-  </script>
+  <script src="network.js"></script>
 </html>

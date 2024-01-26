@@ -1,39 +1,30 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef WIFI_COMMON_H
-#define WIFI_COMMON_H
+#ifndef SYSTEM_MANAGER_H
+#define SYSTEM_MANAGER_H
 #pragma once
 /* Public include ------------------------------------------------------------*/
-#include <stddef.h>
-
 /* Public namespace ----------------------------------------------------------*/
+namespace SYSTEM {
+
 /* Public define -------------------------------------------------------------*/
+#define DHCP_CFG_PATH "/etc/dhcpcd.conf"
+#define WPA_CFG_PATH "/etc/wpa_supplicant.conf"
+
 /* Public typedef ------------------------------------------------------------*/
-typedef void (*config_cb_t)(const char *settings, const char *option,
-                            const char *arg);
+typedef enum {
+  NONE = 0,
+  WPA_UPDATE,
+  DHCP_UPDATE,
+  LED_UPDATE,
+} NOTIFY_INDEX;
 
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-class wifi_resolver {
-public:
-  static size_t count_settings(const char *config_raw);
+void init();
+void loop();
 
-public:
-  wifi_resolver(char *buff, size_t buf_size);
+void notify(NOTIFY_INDEX index);
 
-  void resolve(config_cb_t callback);
-
-public:
-  char *_read_line();
-  char *_read_arg(char *str);
-  char *_strip(char *line);
-  bool _resolve_settings(config_cb_t callback, char *raw_opt);
-
-private:
-  char *_buf;
-  const char *_settings;
-  size_t _buf_size;
-  size_t _offset;
-};
-
-#endif /* WIFI_COMMON_H */
+};     // namespace SYSTEM
+#endif /* SYSTEM_MANAGER_H */

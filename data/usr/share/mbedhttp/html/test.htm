@@ -1,66 +1,54 @@
-<!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8" />
-    <title>Canvas tutorial</title>
-    <style>
-      canvas {
-        border: 1px solid black;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="tutorial"></canvas>
-    <script>
-      var gateway = `ws://${window.location.hostname}/ws`;
-      var websocket;
-      var ctx;
-      var colors = ["#526E8C", "#1B91E3", "#29B191", "#E5473C"];
+<body>
+  <p>I love my cat.</p>
 
-      var getRandColor = function () {
-        return Math.floor(Math.random() * colors.length);
-      };
+  <ul>
+    <li>Buy cat food</li>
+    <li>Exercise</li>
+    <li>Cheer up friend</li>
+  </ul>
 
-      function draw(event) {
-        var color = colors[getRandColor()];
-        ctx.fillStyle = color;
-        ctx.rect(10, 10, 150, 100);
-        ctx.fill();
+  <p>The end!</p>
+</body>
+<script>
+  var visible_index = 0;
 
-        websocket.send(color);
-      };
+  function createElementFromHTML(htmlString) {
+    var div = document.createElement("div");
+    div.innerHTML = htmlString.trim();
 
-      function onOpen(event) {
-        console.log("Connection opened");
-      }
-      function onClose(event) {
-        console.log("Connection closed");
-        setTimeout(initWebSocket, 2000);
-      }
+    // Change this to div.childNodes to support multiple top-level nodes.
+    return div.firstChild;
+  }
 
-      function onMessage(event) {
-        console.log("Connection closed");
-      }
+  function get_blocks() {
+    return document.getElementsByClassName("block");
+  }
 
-      function initWebSocket() {
-        console.log("Trying to open a WebSocket connection...");
-        websocket = new WebSocket(gateway);
-        websocket.onopen = onOpen;
-        websocket.onclose = onClose;
-        websocket.onmessage = onMessage; // <-- add this line
-      }
+  window.addEventListener("load", (event) => {
+    console.log("on windows load.");
 
-      function onLoad() {
-        const canvas = document.getElementById("tutorial");
-        if (canvas.getContext) {
-          ctx = canvas.getContext("2d");
-        }
+    var placement = document.getElementById("blockPlacement");
 
-        canvas.addEventListener("mousedown", draw);
-        initWebSocket();
-      }
+    for (let i = 0; i < 20; ++i) {
+      var block = createElementFromHTML(`<div class="block">block ${i}</div>`);
+      block.style.display = "none";
+      placement.appendChild(block);
+    }
+    var blocks = get_blocks();
+    blocks[0].style.display = "block";
+  });
 
-      window.addEventListener("load", onLoad);
-    </script>
-  </body>
-</html>
+  function switch_block() {
+    console.log("switch block");
+
+    var blocks = get_blocks();
+    blocks[visible_index].style.display = "none";
+
+    visible_index += 1;
+    if (visible_index == blocks.length) {
+      visible_index = 0;
+    }
+
+    blocks[visible_index].style.display = "block";
+  }
+</script>
