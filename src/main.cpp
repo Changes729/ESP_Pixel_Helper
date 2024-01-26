@@ -9,18 +9,12 @@
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #endif
-#include <NeoPixelBus.h>
 
 #include "Web/network_settings.h"
+#include "Web/led_controller.h"
 #include "network_manager.h"
 #include "system_operation.h"
 #include "web_server.h"
-
-const uint16_t PixelCount = 16 * 16;
-const uint8_t PixelPin = 32;
-
-NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> strip(PixelCount, PixelPin);
-RgbColor current_color;
 
 static unsigned long _disconnect_ts = 0;
 static void check_network_state();
@@ -29,6 +23,8 @@ void setup() {
   /** Params init */
   WebServer::create();
   NetworkManager::create();
+
+  WebPixelController::create();
 
   /** Serial init */
   Serial.begin(115200);
@@ -49,21 +45,16 @@ void setup() {
   NetworkManager::instance().begin();
 
   // this resets all the neopixels to an off state
-  strip.Begin();
-  strip.Show();
 
   WebServer::instance().on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Hello, world");
   });
 
-  NetworkSettings::load_webpage();
+  NetworkSettings::init();
   WebServer::instance().begin();
 }
 
 void loop() {
-  strip.ClearTo(current_color);
-  strip.Show();
-
   SYSTEM::loop();
 
   check_network_state();

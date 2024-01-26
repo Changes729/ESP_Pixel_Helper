@@ -3,6 +3,7 @@
 /* Private include -----------------------------------------------------------*/
 #include <Arduino.h>
 
+#include "Web/led_controller.h"
 #include "network_manager.h"
 
 /* Private namespace ---------------------------------------------------------*/
@@ -25,6 +26,7 @@ static unsigned long _dhcp_notify = 0;
 static internal_task _tasks[]{
     {WPA_UPDATE, []() { network_manager.update_wpa_supplicant(WPA_CFG_PATH); }},
     {DHCP_UPDATE, []() { network_manager.update_dhcpcd(DHCP_CFG_PATH); }},
+    {LED_UPDATE, []() { WebPixelController::instance().flush(); }, 10},
 };
 
 /* Private class -------------------------------------------------------------*/

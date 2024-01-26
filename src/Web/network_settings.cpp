@@ -43,7 +43,7 @@ static void _async_body_handler(AsyncWebServerRequest *request) {
  * @param  None
  * @retval None
  */
-void load_webpage() {
+void init() {
   server.serveStatic("/", LittleFS, "/usr/share/mbedhttp/html/");
   server.on("/api/dhcpcd/eth", HTTP_GET, _async_eth_info);
   server.on("/api/dhcpcd/wlan", HTTP_GET, _async_wlan_info);

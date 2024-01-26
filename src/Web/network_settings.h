@@ -10,7 +10,7 @@ namespace NetworkSettings {
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-void load_webpage();
+void init();
 
 };     // namespace NetworkSettings
 #endif /* WEB_NETWORK_SETTINGS_H */

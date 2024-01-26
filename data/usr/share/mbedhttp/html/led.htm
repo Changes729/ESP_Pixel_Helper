@@ -8,27 +8,43 @@
         border: 1px solid black;
       }
     </style>
+    <script
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"
+      type="text/javascript"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css"
+    />
   </head>
   <body>
-    <canvas id="tutorial"></canvas>
+    <canvas
+      id="tutorial"
+      width="200"
+      height="200"
+      style="border: 1px solid"
+    ></canvas>
+    <input id="colorpicker" />
     <script>
-      var gateway = `ws://${window.location.hostname}/ws`;
+      $("#colorpicker").spectrum({
+        color: "#f00",
+      });
+    </script>
+    <script>
+      var gateway = `ws://${window.location.hostname}/ws/led`;
       var websocket;
       var ctx;
-      var colors = ["#526E8C", "#1B91E3", "#29B191", "#E5473C"];
-
-      var getRandColor = function () {
-        return Math.floor(Math.random() * colors.length);
-      };
 
       function draw(event) {
-        var color = colors[getRandColor()];
+        var color = $("#colorpicker").spectrum("get").toHexString();
         ctx.fillStyle = color;
-        ctx.rect(10, 10, 150, 100);
+        ctx.rect(0, 0, 200, 200);
         ctx.fill();
 
         websocket.send(color);
-      };
+      }
 
       function onOpen(event) {
         console.log("Connection opened");
@@ -52,10 +68,7 @@
 
       function onLoad() {
         const canvas = document.getElementById("tutorial");
-        if (canvas.getContext) {
-          ctx = canvas.getContext("2d");
-        }
-
+        ctx = canvas.getContext("2d");
         canvas.addEventListener("mousedown", draw);
         initWebSocket();
       }

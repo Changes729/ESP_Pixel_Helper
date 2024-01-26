@@ -15,6 +15,7 @@ typedef enum {
   NONE = 0,
   WPA_UPDATE,
   DHCP_UPDATE,
+  LED_UPDATE,
 } NOTIFY_INDEX;
 
 /* Public template -----------------------------------------------------------*/
@@ -25,5 +26,5 @@ void loop();
 
 void notify(NOTIFY_INDEX index);
 
-};     // namespace Signal
+};     // namespace SYSTEM
 #endif /* SYSTEM_MANAGER_H */
