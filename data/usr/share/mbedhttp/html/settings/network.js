@@ -32,6 +32,15 @@ function ip_settings_form(id) {
     </div>`);
 }
 
+function box_settings_form(id) {
+  return createElementFromHTML(`<div id=${id}>
+      <label for="ip">Box IP:</label>
+      <input class="ip" required pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$">
+      <label for="port">port:</label>
+      <input class="port" required pattern="^([0-9]).$">
+    </div>`);
+}
+
 window.addEventListener("load", (event) => {
   console.log("on windows load.");
   var ip_settings = document.getElementById("ip-settings");
@@ -40,10 +49,12 @@ window.addEventListener("load", (event) => {
   ip_settings.appendChild(ip_settings_form("eth0"));
   ip_settings.appendChild(ip_settings_title("wlan"));
   ip_settings.appendChild(ip_settings_form("wlan0"));
+  ip_settings.appendChild(box_settings_form("box"));
 
   reload_wifi_settings();
   reload_eth_settings();
   reload_wlan_settings();
+  reload_box_settings();
 
   document.getElementById("savebtn").onclick = on_save;
   document.getElementById("add-wifi-settings").onclick = add_wifi_settings;
@@ -118,6 +129,19 @@ function on_save() {
       mask: input_mask.value,
     })
   );
+
+  var box = document.getElementById("box");
+  input_ip = box.getElementsByClassName("ip")[0];
+  input_port = box.getElementsByClassName("port")[0];
+  xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/box/info", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.send(
+    JSON.stringify({
+      ip: input_ip.value,
+      port: input_port.value,
+    })
+  );
 }
 
 function reload_wifi_settings() {
@@ -171,6 +195,20 @@ function reload_wlan_settings() {
       input_ip.value = json.static_ip;
       input_gateway.value = json.gateway;
       input_mask.value = json.mask;
+    })
+    .catch();
+}
+
+function reload_box_settings() {
+  var box = document.getElementById("box");
+  var input_ip = box.getElementsByClassName("ip")[0];
+  var input_port = box.getElementsByClassName("port")[0];
+
+  fetch("/api/box/info")
+    .then((response) => response.json())
+    .then((json) => {
+      input_ip.value = json.ip;
+      input_port.value = json.port;
     })
     .catch();
 }

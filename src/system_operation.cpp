@@ -2,8 +2,9 @@
 #include "system_operation.h"
 /* Private include -----------------------------------------------------------*/
 #include <Arduino.h>
+#include <FastLED.h>
 
-#include "Web/led_controller.h"
+#include "Module/nfc.h"
 #include "network_manager.h"
 
 /* Private namespace ---------------------------------------------------------*/
@@ -20,17 +21,16 @@ typedef struct _task {
 } internal_task;
 
 /* Private template ----------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static unsigned long _wpa_notify = 0;
 static unsigned long _dhcp_notify = 0;
 static internal_task _tasks[]{
     {WPA_UPDATE, []() { network_manager.update_wpa_supplicant(WPA_CFG_PATH); }},
     {DHCP_UPDATE, []() { network_manager.update_dhcpcd(DHCP_CFG_PATH); }},
-    {LED_UPDATE, []() { WebPixelController::instance().flush(); }, 10},
 };
 
 /* Private class -------------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
 /* Private function ----------------------------------------------------------*/
 /* Private class function ----------------------------------------------------*/
 /**

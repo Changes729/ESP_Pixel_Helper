@@ -74,7 +74,8 @@ void ETHClass_ext::_on_eth_event(WiFiEvent_t event) {
 
 NetworkManager::NetworkManager()
     : _iface_eth{"eth0", NET_DEFAULT_CFG},
-      _iface_wlan{"wlan0", NET_DEFAULT_CFG}, _wifi_configs{} {}
+      _iface_wlan{"wlan0", NET_DEFAULT_CFG}, _wifi_configs{} {
+}
 
 NetworkManager::~NetworkManager() {}
 
@@ -230,6 +231,8 @@ void NetworkManager::_on_wifi_event(WiFiEvent_t event) {
   switch (event) {
   case ARDUINO_EVENT_WIFI_STA_GOT_IP:
     log_n("sta got ip: %s", WiFiSTAClass::localIP().toString().c_str());
+  case ARDUINO_EVENT_ETH_GOT_IP:
+    WiFiUDP::begin(3333);
     break;
   default:
     break;

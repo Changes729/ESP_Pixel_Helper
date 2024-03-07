@@ -69,7 +69,8 @@ class NetworkManager : public Instance<NetworkManager>,
                        public WiFiSTAClass, /** station */
                        public WiFiScanClass,
                        public WiFiAPClass,
-                       public ETHClass_ext {
+                       public ETHClass_ext,
+                       public WiFiUDP {
 private: /** instance */
   friend Instance<NetworkManager>;
   NetworkManager();
@@ -94,8 +95,8 @@ public: /** wifi data manager */
   void update_wifi(const wifi_ap_t *ap_list, size_t count);
 
 public: /** dhcpcd data manager */
-  const net_iface_t& get_eth_iface();
-  const net_iface_t& get_wlan_iface();
+  const net_iface_t &get_eth_iface();
+  const net_iface_t &get_wlan_iface();
   void update_iface(const net_iface_t &new_cfg);
 
 protected:
