@@ -120,7 +120,7 @@ bool has_uid(String &out, const char seq) {
     out.clear();
     for (int i = 0; i < sizeof(_uid); ++i) {
       /** big-endian */
-      snprintf(buff, sizeof(buff), "%X", _uid[i]);
+      snprintf(buff, sizeof(buff), "%02X", _uid[i]);
       out += buff;
       if (isalpha(seq) && i != 7) {
         out += seq;
