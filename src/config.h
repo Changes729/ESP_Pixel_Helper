@@ -9,7 +9,7 @@
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
 #define NUM_LEDS 3
-constexpr auto DATA_PIN = 5;
+constexpr auto DATA_PIN = 15;
 
 #define SERIAL_BAUDRATE 19200
 #define ENCODER_PIN_A 39
@@ -21,10 +21,10 @@ constexpr auto DATA_PIN = 5;
 
 constexpr auto PN5180_RST = 32;
 constexpr auto PN5180_NSS = 33;
-constexpr auto PN5180_BUSY = 35;
+constexpr auto PN5180_BUSY = 14;
 constexpr auto PN5180_SCK = 12;
-constexpr auto PN5180_MISO = 14;
-constexpr auto PN5180_MOSI = 15;
+constexpr auto PN5180_MISO = 17;
+constexpr auto PN5180_MOSI = 5;
 
 constexpr auto MPR121_SDA = 2;
 constexpr auto MPR121_SCL = 4;
