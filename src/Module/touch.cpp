@@ -14,7 +14,7 @@ namespace Touch {
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static Adafruit_MPR121 cap;
+Adafruit_MPR121 cap;
 static bool _started = false;
 
 /* Private class -------------------------------------------------------------*/
@@ -33,7 +33,7 @@ void touch_init() {
     log_e("MPR121 not found, check wiring?");
     success = false;
   } else {
-    cap.setThresholds(6, 2);
+    cap.setThresholds(60, 20);
     cap.writeRegister(MPR121_MHDR, 0x01);
     cap.writeRegister(MPR121_NHDR, 0x01);
     cap.writeRegister(MPR121_NCLR, 0x02);
@@ -52,8 +52,19 @@ void touch_init() {
   _started = success;
 }
 
+void set_thresholds(uint8_t touch, uint8_t release) {
+  cap.setThresholds(touch, release);
+}
+
 uint16_t check_touch_state() { return cap.touched(); }
 
 bool is_touch_started() { return _started; }
+
+void set_debug_info(char *buffer, size_t size) {
+  snprintf(buffer, size,
+           "%i: %u\n"
+           "%i: %u\n",
+           1, cap.filteredData(TOUCH_LEFT), 2, cap.filteredData(TOUCH_RIGHT));
+}
 
 }; // namespace Touch

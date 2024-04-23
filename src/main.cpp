@@ -146,6 +146,16 @@ void loop() {
       leds[0] = curr_touched & _BV(TOUCH_LEFT) ? CRGB::Blue : CRGB::Black;
       leds[2] = curr_touched & _BV(TOUCH_RIGHT) ? CRGB::Blue : CRGB::Black;
       _last_touched = curr_touched;
+
+#if 0
+      {
+        char buffer[128];
+        const char *ip_a = "192.168.1.102";
+        const auto port = 12345;
+        Touch::set_debug_info(buffer, sizeof(buffer));
+        send_msg(buffer, ip_a, port);
+      }
+#endif
     }
 
     {
