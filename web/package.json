@@ -1,0 +1,16 @@
+{
+  "name": "esbuild_example",
+  "version": "1.0.0",
+  "main": "electron/main.js",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.20.1"
+  },
+  "dependencies": {},
+  "scripts": {
+    "build": "node script/esbuild.mjs",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  }
+}
