@@ -1,5 +1,5 @@
-import { promises } from "original-fs";
 import { ClientSettings } from "./client-settings";
+import { DebugSettings } from "./debug-settings";
 import { IPSetting, IPSettingField } from "./ip-settings";
 import { BasicObject } from "./object";
 import { WiFiSettings, wifi_setting } from "./wifi-settings";
@@ -192,10 +192,50 @@ class APPSettingFieldset extends fieldset {
   }
 }
 
+class DebugSettingFieldset extends fieldset {
+  setting: DebugSettings;
+
+  constructor(legend: string, parent?: BasicObject) {
+    super(legend, parent);
+
+    this.setting = new DebugSettings(this);
+
+    this.reload();
+  }
+
+  async reload() {
+    fetch("/api/app/info")
+      .then((response) => response.json())
+      .then((json) => {
+        console.log(json);
+        this.setting.update(json);
+      })
+      .catch((e) => {
+        console.log("exception: ", e);
+      });
+  }
+
+  async save() {
+    console.log("async save app-settings");
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/app/info", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(JSON.stringify(this.setting.value()));
+  }
+
+  render(): HTMLFieldSetElement {
+    let fieldset = super.render();
+    fieldset.appendChild(this.setting.render());
+    return fieldset;
+  }
+}
+
 const PAGE = {
   WIFI_SETTING: 0,
   IP_SETTING: 1,
   APP_SETTING: 2,
+  DEBUG_SETTING: 3,
 };
 
 type Ifieldset = {
@@ -225,6 +265,11 @@ export class Container extends BasicObject {
 
     this.fieldsets[PAGE.APP_SETTING] = new APPSettingFieldset(
       "APP Settings",
+      this
+    );
+
+    this.fieldsets[PAGE.DEBUG_SETTING] = new DebugSettingFieldset(
+      "Debug Settings",
       this
     );
 

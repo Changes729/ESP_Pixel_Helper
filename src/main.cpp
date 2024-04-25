@@ -49,6 +49,12 @@ static int _curr_angle = 0;
 static CRGB leds[NUM_LEDS] = LED_SYS_STARTUP;
 static uint16_t _last_touched;
 
+/** Debug part -----------------------------------------------------*/
+static bool _debug_enable = false;
+static IPAddress _debug_ip{0, 0, 0, 0};
+static String _debug_ip_str = _debug_ip.toString();
+static uint32_t _debug_port = 3333;
+
 /* Private class -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void check_network_state();
@@ -147,15 +153,11 @@ void loop() {
       leds[2] = curr_touched & _BV(TOUCH_RIGHT) ? CRGB::Blue : CRGB::Black;
       _last_touched = curr_touched;
 
-#if 0
-      {
+      if (_debug_enable) {
         char buffer[128];
-        const char *ip_a = "192.168.1.102";
-        const auto port = 12345;
         Touch::set_debug_info(buffer, sizeof(buffer));
-        send_msg(buffer, ip_a, port);
+        send_msg(buffer, _debug_ip_str.c_str(), _debug_port);
       }
-#endif
     }
 
     {
@@ -188,6 +190,20 @@ void loop() {
 
   FastLED.show();
   update_nfc();
+}
+
+bool debug_enable() { return _debug_enable; }
+
+void set_debug(bool enable) { _debug_enable = enable; }
+
+IPAddress debug_ip() { return _debug_ip; }
+
+uint32_t debug_port() { return _debug_port; }
+
+void update_debug_client(IPAddress address, uint32_t port = 3333) {
+  _debug_ip = address;
+  _debug_ip_str = _debug_ip.toString();
+  _debug_port = port;
 }
 
 static void light_init() {

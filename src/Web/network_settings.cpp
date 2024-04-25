@@ -6,6 +6,7 @@
 
 #include "AsyncJson.h"
 #include "config.h"
+#include "main.h"
 #include "network_manager.h"
 #include "system_operation.h"
 #include "web_server.h"
@@ -26,6 +27,7 @@ static void _async_wpa_info(AsyncWebServerRequest *request);
 static void _async_eth_info(AsyncWebServerRequest *request);
 static void _async_wlan_info(AsyncWebServerRequest *request);
 static void _async_box_info(AsyncWebServerRequest *request);
+static void _async_app_info(AsyncWebServerRequest *request);
 
 static void _async_wpa_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total);
@@ -35,6 +37,9 @@ static void _async_wlan_update(AsyncWebServerRequest *request, uint8_t *data,
                                size_t len, size_t index, size_t total);
 
 static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
+                           size_t len, size_t index, size_t total);
+
+static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
                            size_t len, size_t index, size_t total);
 
 static void _async_body_handler(AsyncWebServerRequest *request) {
@@ -50,10 +55,13 @@ static void _async_body_handler(AsyncWebServerRequest *request) {
  */
 void init() {
   server.serveStatic("/", LittleFS, "/usr/share/mbedhttp/html/");
+
   server.on("/api/dhcpcd/eth", HTTP_GET, _async_eth_info);
   server.on("/api/dhcpcd/wlan", HTTP_GET, _async_wlan_info);
   server.on("/api/wpa_supplicant/info", HTTP_GET, _async_wpa_info);
   server.on("/api/box/info", HTTP_GET, _async_box_info);
+  server.on("/api/app/info", HTTP_GET, _async_app_info);
+
   server.on("/api/dhcpcd/eth", HTTP_POST, _async_body_handler, NULL,
             _async_eth_update);
   server.on("/api/dhcpcd/wlan", HTTP_POST, _async_body_handler, NULL,
@@ -62,6 +70,8 @@ void init() {
             _async_wpa_update);
   server.on("/api/box/info", HTTP_POST, _async_body_handler, NULL,
             _async_box_cfg);
+  server.on("/api/app/info", HTTP_POST, _async_body_handler, NULL,
+            _async_app_cfg);
 }
 
 /**
@@ -153,6 +163,18 @@ static void _async_box_info(AsyncWebServerRequest *request) {
   request->send(200, "text/plain", output);
 }
 
+static void _async_app_info(AsyncWebServerRequest *request) {
+  String output;
+  JsonDocument app_debug_info;
+
+  app_debug_info["enable"] = debug_enable();
+  app_debug_info["ip"] = debug_ip().toString();
+  app_debug_info["port"] = String(debug_port());
+
+  serializeJson(app_debug_info, output);
+  request->send(200, "text/plain", output);
+}
+
 static void _async_wpa_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total) {
   String output;
@@ -214,7 +236,6 @@ static void _async_wlan_update(AsyncWebServerRequest *request, uint8_t *data,
 
 static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
                            size_t len, size_t index, size_t total) {
-  net_iface_t new_cfg;
   JsonDocument box_info;
   auto ip_address = IPAddress();
 
@@ -223,6 +244,23 @@ static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
 
   ip_address.fromString(box_info["ip"].as<const char *>());
   update_rs_cfg(ip_address, atoi(box_info["port"].as<const char *>()));
+}
+
+static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
+                           size_t len, size_t index, size_t total) {
+  JsonDocument app_info;
+  auto ip_address = IPAddress();
+
+  deserializeJson(app_info, (const char *)data, total);
+  request->send(204);
+
+  if (app_info["enable"].as<bool>() == false) {
+    set_debug(false);
+  } else {
+    set_debug(true);
+    ip_address.fromString(app_info["ip"].as<const char *>());
+    update_debug_client(ip_address, atoi(app_info["port"].as<const char *>()));
+  }
 }
 
 }; // namespace NetworkSettings
