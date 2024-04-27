@@ -5,6 +5,7 @@
 #include <LittleFS.h>
 
 #include "AsyncJson.h"
+#include "Module/touch.h"
 #include "config.h"
 #include "main.h"
 #include "network_manager.h"
@@ -158,6 +159,8 @@ static void _async_box_info(AsyncWebServerRequest *request) {
 
   box_info["ip"] = rs_cfg().ip.toString();
   box_info["port"] = String(rs_cfg().port);
+  box_info["touch"] = String(Touch::threadsholds_touch());
+  box_info["release"] = String(Touch::threadsholds_release());
 
   serializeJson(box_info, output);
   request->send(200, "text/plain", output);
@@ -244,6 +247,8 @@ static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
 
   ip_address.fromString(box_info["ip"].as<const char *>());
   update_rs_cfg(ip_address, atoi(box_info["port"].as<const char *>()));
+  Touch::set_thresholds(box_info["touch"].as<uint8_t>(),
+                        box_info["release"].as<uint8_t>());
 }
 
 static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,

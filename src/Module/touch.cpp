@@ -56,6 +56,10 @@ void set_thresholds(uint8_t touch, uint8_t release) {
   cap.setThresholds(touch, release);
 }
 
+uint8_t threadsholds_touch() { return cap.readRegister8(MPR121_TOUCHTH_0); }
+
+uint8_t threadsholds_release() { return cap.readRegister8(MPR121_RELEASETH_0); }
+
 uint16_t check_touch_state() { return cap.touched(); }
 
 bool is_touch_started() { return _started; }

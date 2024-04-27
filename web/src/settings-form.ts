@@ -159,7 +159,7 @@ class APPSettingFieldset extends fieldset {
   constructor(legend: string, parent?: BasicObject) {
     super(legend, parent);
 
-    this.client = new ClientSettings({ ip: "", port: "" }, this);
+    this.client = new ClientSettings(this);
 
     this.reload();
   }

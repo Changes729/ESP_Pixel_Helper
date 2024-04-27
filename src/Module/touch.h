@@ -17,6 +17,9 @@ namespace Touch {
 void touch_init();
 
 void set_thresholds(uint8_t touch, uint8_t release);
+uint8_t threadsholds_touch();
+uint8_t threadsholds_release();
+
 uint16_t check_touch_state();
 bool is_touch_started();
 
