@@ -51,6 +51,7 @@ static uint16_t _last_touched;
 
 /** Debug part -----------------------------------------------------*/
 static bool _debug_enable = false;
+static bool _sys_enable = true;
 static IPAddress _debug_ip{0, 0, 0, 0};
 static String _debug_ip_str = _debug_ip.toString();
 static uint32_t _debug_port = 3333;
@@ -105,6 +106,18 @@ void setup() {
 void loop() {
   SYSTEM::loop();
   check_network_state();
+
+  /**
+   * DOC: led_enable currently same as 'system_enable';
+   * don't show any LED's and send information.
+   *
+   * allowed network work currently.
+   */
+  if (!_sys_enable) {
+    FastLED.clear();
+    FastLED.show();
+    return;
+  }
 
   do {
     if (NetworkManager::instance().is_connect() ||
@@ -195,6 +208,10 @@ void loop() {
 bool debug_enable() { return _debug_enable; }
 
 void set_debug(bool enable) { _debug_enable = enable; }
+
+bool system_enable() { return _sys_enable; }
+
+void set_system(bool enable) { _sys_enable = enable; }
 
 IPAddress debug_ip() { return _debug_ip; }
 

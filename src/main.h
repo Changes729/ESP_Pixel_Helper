@@ -14,6 +14,9 @@
 bool debug_enable();
 void set_debug(bool enable);
 
+bool system_enable();
+void set_system(bool enable);
+
 IPAddress debug_ip();
 uint32_t debug_port();
 void update_debug_client(IPAddress address, uint32_t port = 3333);

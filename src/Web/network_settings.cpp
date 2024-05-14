@@ -29,6 +29,7 @@ static void _async_eth_info(AsyncWebServerRequest *request);
 static void _async_wlan_info(AsyncWebServerRequest *request);
 static void _async_box_info(AsyncWebServerRequest *request);
 static void _async_app_info(AsyncWebServerRequest *request);
+static void _async_sys_info(AsyncWebServerRequest *request);
 
 static void _async_wpa_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total);
@@ -41,6 +42,8 @@ static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
                            size_t len, size_t index, size_t total);
 
 static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
+                           size_t len, size_t index, size_t total);
+static void _async_sys_ctl(AsyncWebServerRequest *request, uint8_t *data,
                            size_t len, size_t index, size_t total);
 
 static void _async_body_handler(AsyncWebServerRequest *request) {
@@ -62,6 +65,7 @@ void init() {
   server.on("/api/wpa_supplicant/info", HTTP_GET, _async_wpa_info);
   server.on("/api/box/info", HTTP_GET, _async_box_info);
   server.on("/api/app/info", HTTP_GET, _async_app_info);
+  server.on("/api/sys/info", HTTP_GET, _async_sys_info);
 
   server.on("/api/dhcpcd/eth", HTTP_POST, _async_body_handler, NULL,
             _async_eth_update);
@@ -73,6 +77,8 @@ void init() {
             _async_box_cfg);
   server.on("/api/app/info", HTTP_POST, _async_body_handler, NULL,
             _async_app_cfg);
+  server.on("/api/sys/info", HTTP_POST, _async_body_handler, NULL,
+            _async_sys_ctl);
 }
 
 /**
@@ -178,6 +184,16 @@ static void _async_app_info(AsyncWebServerRequest *request) {
   request->send(200, "text/plain", output);
 }
 
+static void _async_sys_info(AsyncWebServerRequest *request) {
+  String output;
+  JsonDocument sys_info;
+
+  sys_info["system"] = system_enable();
+
+  serializeJson(sys_info, output);
+  request->send(200, "text/plain", output);
+}
+
 static void _async_wpa_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total) {
   String output;
@@ -265,6 +281,37 @@ static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
     set_debug(true);
     ip_address.fromString(app_info["ip"].as<const char *>());
     update_debug_client(ip_address, atoi(app_info["port"].as<const char *>()));
+  }
+}
+
+/**
+ * @brief
+ *
+ * curl -d '{"system":true}' -H
+ * "Content-Type:application/x-www-form-urlencoded" -X POST
+ * http://192.168.1.1/api/sys/info
+ *
+ * @param request
+ */
+static void _async_sys_ctl(AsyncWebServerRequest *request, uint8_t *data,
+                           size_t len, size_t index, size_t total) {
+  JsonDocument sys_info;
+  auto ip_address = IPAddress();
+
+  auto err = deserializeJson(sys_info, (const char *)data, total);
+  if (err == DeserializationError::Code::Ok) {
+
+    if (sys_info.containsKey("system")) {
+      set_system(sys_info["system"].as<bool>());
+    } else {
+      err = DeserializationError::Code::InvalidInput;
+    }
+  }
+
+  if (err == DeserializationError::Code::Ok) {
+    request->send(200);
+  } else {
+    request->send(400);
   }
 }
 
