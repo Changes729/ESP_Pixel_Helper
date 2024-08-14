@@ -33,6 +33,9 @@ void nfc_init() {
   nfc.begin();
   nfc.reset();
   nfc.setupRF();
+
+  nfc.writeRegisterWithOrMask(0x22, 0x03);
+  nfc.writeRegisterWithOrMask(0x27, 0x08);
 }
 
 void update_nfc() {
@@ -49,6 +52,8 @@ void update_nfc() {
 
     nfc.reset();
     nfc.setupRF();
+    nfc.writeRegisterWithOrMask(0x22, 0x03);
+    nfc.writeRegisterWithOrMask(0x27, 0x08);
   }
 
 #if 0

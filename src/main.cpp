@@ -48,6 +48,8 @@ static unsigned long _encoder_ts = 0;
 static int _curr_angle = 0;
 static CRGB leds[NUM_LEDS] = LED_SYS_STARTUP;
 static uint16_t _last_touched;
+static unsigned long _send_cycle = 0;
+constexpr unsigned long _SEND_TS = 200; /* 200 ms */
 
 /** Debug part -----------------------------------------------------*/
 static bool _debug_enable = false;
@@ -119,13 +121,21 @@ void loop() {
     return;
   }
 
+  bool could_send_msg = false;
+  if (millis() - _send_cycle > _SEND_TS) {
+    could_send_msg = true;
+    _send_cycle = millis();
+  }
+
   do {
     if (NetworkManager::instance().is_connect() ||
         NetworkManager::instance().isConnected()) {
       String uid;
       if (has_uid(uid)) {
         log_n("send package");
-        send_box_msg("_cobox_scene_" + uid);
+        if (could_send_msg) {
+          send_box_msg("_cobox_scene_" + uid);
+        }
         set_led(leds, LED_SYS_ACTIVE, NUM_LEDS);
       } else {
         set_led(leds, LED_SYS_IDLE, NUM_LEDS);
@@ -177,7 +187,9 @@ void loop() {
       // get encoder count and clean up.
       long increment = get_encoder_count(true) % ENCODER_EDGE;
       if (increment / 4) {
-        send_box_msg("_cobox_point_" + String(increment));
+        if (could_send_msg) {
+          send_box_msg("_cobox_point_" + String(increment));
+        }
         _encoder_ts = millis();
       }
 
