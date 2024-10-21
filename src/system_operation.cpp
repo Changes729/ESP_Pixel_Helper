@@ -2,9 +2,7 @@
 #include "system_operation.h"
 /* Private include -----------------------------------------------------------*/
 #include <Arduino.h>
-#include <FastLED.h>
 
-#include "Module/nfc.h"
 #include "network_manager.h"
 
 /* Private namespace ---------------------------------------------------------*/

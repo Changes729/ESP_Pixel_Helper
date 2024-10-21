@@ -5,7 +5,6 @@
 #include <LittleFS.h>
 
 #include "AsyncJson.h"
-#include "Module/touch.h"
 #include "config.h"
 #include "main.h"
 #include "network_manager.h"
@@ -27,7 +26,6 @@ namespace NetworkSettings {
 static void _async_wpa_info(AsyncWebServerRequest *request);
 static void _async_eth_info(AsyncWebServerRequest *request);
 static void _async_wlan_info(AsyncWebServerRequest *request);
-static void _async_box_info(AsyncWebServerRequest *request);
 static void _async_app_info(AsyncWebServerRequest *request);
 static void _async_sys_info(AsyncWebServerRequest *request);
 
@@ -37,9 +35,6 @@ static void _async_eth_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total);
 static void _async_wlan_update(AsyncWebServerRequest *request, uint8_t *data,
                                size_t len, size_t index, size_t total);
-
-static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
-                           size_t len, size_t index, size_t total);
 
 static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
                            size_t len, size_t index, size_t total);
@@ -63,7 +58,6 @@ void init() {
   server.on("/api/dhcpcd/eth", HTTP_GET, _async_eth_info);
   server.on("/api/dhcpcd/wlan", HTTP_GET, _async_wlan_info);
   server.on("/api/wpa_supplicant/info", HTTP_GET, _async_wpa_info);
-  server.on("/api/box/info", HTTP_GET, _async_box_info);
   server.on("/api/app/info", HTTP_GET, _async_app_info);
   server.on("/api/sys/info", HTTP_GET, _async_sys_info);
 
@@ -73,8 +67,6 @@ void init() {
             _async_wlan_update);
   server.on("/api/wpa_supplicant/info", HTTP_POST, _async_body_handler, NULL,
             _async_wpa_update);
-  server.on("/api/box/info", HTTP_POST, _async_body_handler, NULL,
-            _async_box_cfg);
   server.on("/api/app/info", HTTP_POST, _async_body_handler, NULL,
             _async_app_cfg);
   server.on("/api/sys/info", HTTP_POST, _async_body_handler, NULL,
@@ -158,20 +150,6 @@ static void _async_wlan_info(AsyncWebServerRequest *request) {
   request->send(200, "text/plain", output);
 }
 
-static void _async_box_info(AsyncWebServerRequest *request) {
-  String output;
-  JsonDocument box_info;
-  auto wlan = network_manager.get_wlan_iface();
-
-  box_info["ip"] = rs_cfg().ip.toString();
-  box_info["port"] = String(rs_cfg().port);
-  box_info["touch"] = String(Touch::threadsholds_touch());
-  box_info["release"] = String(Touch::threadsholds_release());
-
-  serializeJson(box_info, output);
-  request->send(200, "text/plain", output);
-}
-
 static void _async_app_info(AsyncWebServerRequest *request) {
   String output;
   JsonDocument app_debug_info;
@@ -251,20 +229,6 @@ static void _async_wlan_update(AsyncWebServerRequest *request, uint8_t *data,
   request->send(204);
 
   SYSTEM::notify(SYSTEM::DHCP_UPDATE);
-}
-
-static void _async_box_cfg(AsyncWebServerRequest *request, uint8_t *data,
-                           size_t len, size_t index, size_t total) {
-  JsonDocument box_info;
-  auto ip_address = IPAddress();
-
-  deserializeJson(box_info, (const char *)data, total);
-  request->send(204);
-
-  ip_address.fromString(box_info["ip"].as<const char *>());
-  update_rs_cfg(ip_address, atoi(box_info["port"].as<const char *>()));
-  Touch::set_thresholds(box_info["touch"].as<uint8_t>(),
-                        box_info["release"].as<uint8_t>());
 }
 
 static void _async_app_cfg(AsyncWebServerRequest *request, uint8_t *data,
