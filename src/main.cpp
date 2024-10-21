@@ -4,6 +4,8 @@
 
 #include <Arduino.h>
 #include <LittleFS.h>
+#include <USB.h>
+#include <USBHIDGamepad.h>
 
 #ifdef ESP32
 #include <AsyncTCP.h>
@@ -13,6 +15,8 @@
 #include <ESPAsyncTCP.h>
 #endif
 
+#include "Module/encoder.h"
+#include "Module/gamepad.h"
 #include "Web/network_settings.h"
 #include "config.h"
 #include "network_manager.h"
@@ -21,6 +25,9 @@
 
 /* Private namespace ---------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define ENCODER_A 13
+#define ENCODER_B 14
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -28,6 +35,7 @@ static unsigned long _disconnect_ts = 0;
 static unsigned long _encoder_ts = 0;
 static int _curr_angle = 0;
 static uint16_t _last_touched;
+static unsigned long _send_cycle = 0;
 constexpr unsigned long _SEND_TS = 200; /* 200 ms */
 
 /** Debug part -----------------------------------------------------*/
@@ -37,6 +45,7 @@ static IPAddress _debug_ip{0, 0, 0, 0};
 static String _debug_ip_str = _debug_ip.toString();
 static uint32_t _debug_port = 3333;
 
+/** GamePad part ---------------------------------------------------*/
 /* Private class -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void check_network_state();
@@ -69,26 +78,48 @@ void setup() {
   NetworkManager::instance().begin();
 
   // this resets all the neopixels to an off state
-
   WebServer::instance().on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Hello, world");
   });
 
   NetworkSettings::init();
   WebServer::instance().begin();
+
+  encoder_init(ENCODER_A, ENCODER_B);
+  GamePad::create();
+  USB.begin();
 }
 
 void loop() {
   SYSTEM::loop();
   check_network_state();
 
-  do {
-    if (NetworkManager::instance().is_connect() ||
-        NetworkManager::instance().isConnected()) {
-    } else {
-    }
+  bool could_send_msg = false;
+  if (millis() - _send_cycle > _SEND_TS) {
+    could_send_msg = true;
+    _send_cycle = millis();
+  }
 
-  } while (0);
+  if (could_send_msg) {
+    GamePad::instance().update();
+
+    {
+      // get encoder count and clean up.
+      long increment = get_encoder_count(true) % ENCODER_EDGE;
+      if (increment / 4) {
+        send_box_msg("_cobox_point_" + String(increment));
+        Serial.println(increment);
+        _encoder_ts = millis();
+      }
+
+      if (millis() - _encoder_ts > ENCODER_WATCH_UP) {
+        _curr_angle = 0;
+      } else if (increment / 4) {
+        _curr_angle += increment;
+        _encoder_ts = millis();
+      }
+    }
+  }
 }
 
 bool debug_enable() { return _debug_enable; }
