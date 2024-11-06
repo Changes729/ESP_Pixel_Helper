@@ -87,7 +87,7 @@ static void _async_wpa_supplicant(AsyncWebServerRequest *request) {
   const char *ssid = nullptr;
   const char *passwd = nullptr;
   for (int i = 0; i < params; i++) {
-    AsyncWebParameter *p = request->getParam(i);
+    const AsyncWebParameter *p = request->getParam(i);
     if (p->isPost()) {
       if (p->name() == "ssid") {
         ssid = p->value().c_str();

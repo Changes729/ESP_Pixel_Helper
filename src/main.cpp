@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <Arduino.h>
+#include <ElegantOTA.h>
 #include <LittleFS.h>
 #include <USB.h>
 #include <USBHIDGamepad.h>
@@ -84,6 +85,7 @@ void setup() {
 
   NetworkSettings::init();
   WebServer::instance().begin();
+  ElegantOTA.begin(&WebServer::instance());
 
   encoder_init(ENCODER_A, ENCODER_B);
   GamePad::create();
@@ -92,6 +94,7 @@ void setup() {
 
 void loop() {
   SYSTEM::loop();
+  ElegantOTA.loop();
   check_network_state();
 
   bool could_send_msg = false;

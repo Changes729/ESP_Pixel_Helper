@@ -29,7 +29,7 @@
  * @param  None
  * @retval None
  */
-GamePad::GamePad() {
+GamePad::GamePad() : Joystick_{} {
   for (auto pin : {
            KEY_A,
            KEY_B,
@@ -40,8 +40,12 @@ GamePad::GamePad() {
            KEY_LF,
            KEY_RI,
        }) {
-    pinMode(pin, INPUT);
+    pinMode(pin, INPUT_PULLUP);
   }
+
+  setXAxisRange(-127, 127);
+  setYAxisRange(-127, 127);
+  setZAxisRange(-127, 127);
 
   begin();
 }
@@ -53,11 +57,11 @@ void GamePad::update() {
     int pin;
     uint8_t button;
   } PIN_MAP[]{
-      {._data = _key.a, .pin = KEY_A, .button = BUTTON_A},
-      {._data = _key.b, .pin = KEY_B, .button = BUTTON_B},
-      {._data = _key.x, .pin = KEY_X, .button = BUTTON_X},
-      {._data = _key.y, .pin = KEY_Y, .button = BUTTON_Y},
-      {._data = _key.center, .pin = KEY_CENTER, .button = BUTTON_START},
+      {._data = _key.a, .pin = KEY_A, .button = KEY_A},
+      {._data = _key.b, .pin = KEY_B, .button = KEY_B},
+      {._data = _key.x, .pin = KEY_X, .button = KEY_X},
+      {._data = _key.y, .pin = KEY_Y, .button = KEY_Y},
+      {._data = _key.center, .pin = KEY_CENTER, .button = KEY_CENTER},
   };
 
   for (auto &map : PIN_MAP) {
@@ -69,7 +73,8 @@ void GamePad::update() {
   }
 
   /** stick part ****************************************************/
-  _stick_left.x += (digitalRead(KEY_UP) * 127 + digitalRead(KEY_DW) * -127);
-  _stick_left.y += (digitalRead(KEY_LF) * 127 + digitalRead(KEY_RI) * -127);
-  leftStick(_stick_left.x, _stick_left.y);
+  _stick_left.x = (digitalRead(KEY_UP) * 127 + digitalRead(KEY_DW) * -127);
+  _stick_left.y = (digitalRead(KEY_LF) * 127 + digitalRead(KEY_RI) * -127);
+  setXAxis(_stick_left.x);
+  setYAxis(_stick_left.y);
 }

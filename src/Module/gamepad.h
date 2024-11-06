@@ -4,7 +4,7 @@
 #pragma once
 /* Public include ------------------------------------------------------------*/
 #include "Language/instance.h"
-#include "USBHIDGamepad.h"
+#include <Joystick_ESP32S2.h>
 
 /* Public namespace ----------------------------------------------------------*/
 /* Public define -------------------------------------------------------------*/
@@ -12,7 +12,7 @@
 /* Public template -----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
 /* Public class --------------------------------------------------------------*/
-class GamePad : public Instance<GamePad>, public USBHIDGamepad {
+class GamePad : public Instance<GamePad>, public Joystick_ {
 private:
   friend Instance<GamePad>;
   GamePad();
@@ -38,13 +38,13 @@ private:
   } _hat;
 
   struct {
-    uint8_t x;
-    uint8_t y;
+    int8_t x;
+    int8_t y;
   } _stick_left;
 
   struct {
-    uint8_t x;
-    uint8_t y;
+    int8_t x;
+    int8_t y;
   } _stick_right;
 };
 #endif /* GAMEPAD_H */
