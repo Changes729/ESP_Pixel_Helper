@@ -46,12 +46,16 @@ BoxRingScreenCFG init_rs_cfg() {
     _box_rs_cfg.port = IPAddress(rs_cfg["port"].as<int>());
   }
 
+  if (rs_cfg.containsKey("index")) {
+    _box_rs_cfg.index = IPAddress(rs_cfg["index"].as<int>());
+  }
+
   return _box_rs_cfg;
 }
 
 BoxRingScreenCFG rs_cfg() { return _box_rs_cfg; }
 
-void update_rs_cfg(IPAddress ip, int port) {
+void update_rs_cfg(IPAddress ip, int port, int index) {
   String output;
   auto path = "/etc/box_rs.json";
   JsonDocument rs_cfg;
@@ -59,9 +63,11 @@ void update_rs_cfg(IPAddress ip, int port) {
   _box_rs_cfg.ip = ip;
   _box_rs_cfg.ip_str = ip.toString();
   _box_rs_cfg.port = port;
+  _box_rs_cfg.index = index;
 
   rs_cfg["ip"] = static_cast<uint32_t>(ip);
   rs_cfg["port"] = port;
+  rs_cfg["index"] = index;
 
   File file = LittleFS.open(path, FILE_WRITE);
   serializeJson(rs_cfg, output);

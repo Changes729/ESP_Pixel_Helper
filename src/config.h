@@ -38,6 +38,7 @@ constexpr auto ENCODER_WATCH_UP = 500 /* ms */;
 struct BoxRingScreenCFG {
   IPAddress ip;
   int port;
+  int index;
 
   String ip_str; /** temp */
 };
@@ -47,6 +48,6 @@ struct BoxRingScreenCFG {
 /* Public class --------------------------------------------------------------*/
 BoxRingScreenCFG init_rs_cfg();
 BoxRingScreenCFG rs_cfg();
-void update_rs_cfg(IPAddress ip, int port);
+void update_rs_cfg(IPAddress ip, int port, int index = 0);
 
 #endif /* _CONFIG_H */
