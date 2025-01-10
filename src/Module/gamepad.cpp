@@ -77,5 +77,6 @@ void GamePad::update() {
   _stick_left.y = (digitalRead(KEY_LF) * 127 + digitalRead(KEY_RI) * -127);
   setXAxis(_stick_left.x);
   setYAxis(_stick_left.y);
-  setZAxis(analogRead(DAC2) >> 2);
+
+  setZAxis(map(analogRead(DAC2), 0, 0x1FFF, -127, 127));
 }
