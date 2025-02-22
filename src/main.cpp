@@ -40,7 +40,7 @@ static unsigned long _encoder_ts = 0;
 static int _curr_angle = 0;
 static uint16_t _last_touched;
 static unsigned long _send_cycle = 0;
-constexpr unsigned long _SEND_TS = 100; /* 200 ms */
+constexpr unsigned long _SEND_TS = 50; /* 200 ms */
 
 /** Debug part -----------------------------------------------------*/
 static bool _debug_enable = false;
@@ -134,8 +134,18 @@ void loop() {
       long increment = get_encoder_count(true) % ENCODER_EDGE;
       if (increment) {
         // send_box_msg("_cobox_point_" + String(increment));
-        Serial.println(increment);
+        // Serial.println(increment);
+        if (increment < 0) {
+          GamePad::instance().pressButton(13);
+          GamePad::instance().releaseButton(14);
+        } else if (increment > 0) {
+          GamePad::instance().pressButton(14);
+          GamePad::instance().releaseButton(13);
+        }
         _encoder_ts = millis();
+      } else {
+        GamePad::instance().releaseButton(13);
+        GamePad::instance().releaseButton(14);
       }
 
       if (millis() - _encoder_ts > ENCODER_WATCH_UP) {
