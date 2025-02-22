@@ -131,21 +131,23 @@ void loop() {
   if (could_send_msg) {
     {
       // get encoder count and clean up.
+      const int LEFT_CODE = 15;
+      const int RIGHT_CODE = 16;
       long increment = get_encoder_count(true) % ENCODER_EDGE;
       if (increment) {
         // send_box_msg("_cobox_point_" + String(increment));
         // Serial.println(increment);
         if (increment < 0) {
-          GamePad::instance().pressButton(13);
-          GamePad::instance().releaseButton(14);
+          GamePad::instance().pressButton(LEFT_CODE);
+          GamePad::instance().releaseButton(RIGHT_CODE);
         } else if (increment > 0) {
-          GamePad::instance().pressButton(14);
-          GamePad::instance().releaseButton(13);
+          GamePad::instance().pressButton(RIGHT_CODE);
+          GamePad::instance().releaseButton(LEFT_CODE);
         }
         _encoder_ts = millis();
       } else {
-        GamePad::instance().releaseButton(13);
-        GamePad::instance().releaseButton(14);
+        GamePad::instance().releaseButton(LEFT_CODE);
+        GamePad::instance().releaseButton(RIGHT_CODE);
       }
 
       if (millis() - _encoder_ts > ENCODER_WATCH_UP) {
