@@ -16,7 +16,7 @@ namespace NetworkSettings {
 
 /* Private define ------------------------------------------------------------*/
 #define server WebServer::instance()
-#define network_manager NetworkManager::instance()
+#define network_manager LOCAL::NetworkManager::instance()
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private template ----------------------------------------------------------*/
@@ -193,7 +193,7 @@ static void _async_wpa_update(AsyncWebServerRequest *request, uint8_t *data,
 
 static void _async_eth_update(AsyncWebServerRequest *request, uint8_t *data,
                               size_t len, size_t index, size_t total) {
-  net_iface_t new_cfg;
+  LOCAL::net_iface_t new_cfg;
   JsonDocument eth_info;
   auto ip_address = IPAddress();
 
@@ -213,7 +213,7 @@ static void _async_eth_update(AsyncWebServerRequest *request, uint8_t *data,
 
 static void _async_wlan_update(AsyncWebServerRequest *request, uint8_t *data,
                                size_t len, size_t index, size_t total) {
-  net_iface_t new_cfg;
+  LOCAL::net_iface_t new_cfg;
   JsonDocument wlan_info;
   auto ip_address = IPAddress();
 

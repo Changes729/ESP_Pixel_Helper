@@ -5,7 +5,7 @@
 
 /* Private namespace ---------------------------------------------------------*/
 using namespace fs;
-
+namespace LOCAL{
 /* Private define ------------------------------------------------------------*/
 #define NET_CONF_MAX_SIZE 1024 /** 1k */
 
@@ -238,3 +238,4 @@ void NetworkManager::_on_wifi_event(WiFiEvent_t event) {
     break;
   }
 }
+};

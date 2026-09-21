@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "IPAddress.h"
-#include "IPv6Address.h"
 #include "Print.h"
 
 #include "WiFiAP.h"
@@ -26,6 +25,7 @@
 #include "Language/instance.h"
 
 /* Public namespace ----------------------------------------------------------*/
+namespace LOCAL{
 /* Public define -------------------------------------------------------------*/
 #define WIFI_CONFIGS_MAX 3
 
@@ -107,5 +107,5 @@ private:
   net_iface_t _iface_wlan;
   wifi_ap_t _wifi_configs[WIFI_CONFIGS_MAX];
 };
-
+};
 #endif /* NETWORK_MANAGER_H */

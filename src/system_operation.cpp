@@ -8,7 +8,7 @@
 /* Private namespace ---------------------------------------------------------*/
 namespace SYSTEM {
 /* Private define ------------------------------------------------------------*/
-#define network_manager NetworkManager::instance()
+#define network_manager LOCAL::NetworkManager::instance()
 
 /* Private typedef -----------------------------------------------------------*/
 typedef struct _task {
